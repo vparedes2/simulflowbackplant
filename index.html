@@ -38,7 +38,7 @@ button:focus-visible{outline:2px solid var(--tre);outline-offset:2px}
 .foot{position:absolute;left:16px;right:376px;bottom:12px;padding:12px 14px;z-index:3;display:grid;gap:6px}
 .foot h3{margin:0;font:700 21px var(--f-display);letter-spacing:.03em}.foot h3 small{font:500 12px var(--f-mono);color:var(--muted);margin-left:8px}
 .foot p{margin:0;font-size:13.5px;color:#c6d3dc;max-width:85ch}
-.kv{display:flex;flex-wrap:wrap;gap:6px}.kv div{border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:11px;color:var(--muted)}.kv b{display:block;font:500 14px var(--f-mono);color:var(--fg)}
+.kv{display:none;flex-wrap:wrap;gap:6px}.kv div{border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:11px;color:var(--muted)}.kv b{display:block;font:500 14px var(--f-mono);color:var(--fg)}
 .ctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .legend{display:flex;gap:12px;font-size:11.5px;color:var(--muted);align-items:center}.legend i{display:inline-block;width:18px;height:5px;border-radius:3px;margin-right:5px;vertical-align:middle}
 .note{font-size:11px;color:var(--muted);margin:0}
@@ -77,9 +77,9 @@ button:focus-visible{outline:2px solid var(--tre);outline-offset:2px}
  <aside class="side glass" aria-label="Recorrido">
   <h2>Recorrido de una gota de retorno</h2>
   <div class="steps" id="steps"></div>
-  <h2>Distancia al pad (estimada)</h2>
+  <h2>Ubicación de la planta</h2>
   <div class="dist" id="dist"></div>
-  <p class="note">Escena ilustrativa. En modo planta central la distancia está comprimida: la línea real recorre unos 10 km. Cifras de la charla «Water Transfer y Flowback en Vaca Muerta», con márgenes de ±30–40 %.</p>
+  <p class="note">Escena ilustrativa basada en la charla «Water Transfer y Flowback en Vaca Muerta». En modo planta central la distancia está comprimida.</p>
   <div class="credit"><div><span class="cl">Autor · contacto</span><b>Lic. Víctor Javier Paredes</b><small>HSE · Water transfer · Autor de “Water Transfer en Vaca Muerta”</small>
    <div class="cbtn"><a href="https://wa.me/5492994603071?text=Hola%20V%C3%ADctor%2C%20vi%20la%20simulaci%C3%B3n%203D%20de%20flowback%20y%20quiero%20consultarte." target="_blank" rel="noopener">WhatsApp</a></div></div></div>
  </aside>
@@ -179,7 +179,7 @@ function austTank(x,z,nP,h,water,par,stairAng,name){const r=6*nP/(2*Math.PI);con
  const lip=new THREE.Mesh(new THREE.TorusGeometry(r+0.05,0.15,8,72),M(0x121314));lip.rotation.x=Math.PI/2;lip.position.y=h;g.add(lip);
  const w=new THREE.Mesh(new THREE.CircleGeometry(r*0.985,48),M(water,{roughness:.08,metalness:.3}));w.rotation.x=-Math.PI/2;w.position.y=h*0.8;g.add(w);
  const vol=Math.round(Math.PI*r*r*h/10)*10;g.userData.vol=vol;g.userData.r=r;
- hot(g,name,`${(name.includes('tratada')?'Agua tratada':'Agua de retorno cruda')} · ${vol.toLocaleString('es-AR')} m³ · ${nP} placas de 6 × 3 m (Ø ${(2*r).toFixed(1).replace('.',',')} m).`);
+ hot(g,name,`${(name.includes('tratada')?'Agua tratada':'Agua de retorno cruda')} · tanque australiano de placas, con escalera de inspección y recinto de contención.`);
  ringBerm(par,x,z,r+3,name);
  if(stairAng!=null){const dx=Math.cos(stairAng),dz=-Math.sin(stairAng);stair(par,x+dx*(r+0.05),z+dz*(r+0.05),stairAng,h)}
  return g}
@@ -258,7 +258,7 @@ const gasL=poly([[-33,3.4,0],[-33,3.6,-2],[-33,0.6,-6],[-38,0.6,-12],[-38,0.6,-5
  [0,2.1,4.2].forEach(a=>seg([Math.cos(a)*3,0.3,Math.sin(a)*3],[0,15,0],0.035,0x888,g));
  const fl=new THREE.Mesh(new THREE.ConeGeometry(0.9,4,12,1,true),new THREE.MeshBasicMaterial({color:0xffa53a,transparent:true,opacity:.85}));fl.position.set(0,19,0);g.add(fl);scene.userData.flame=fl;
  const b=new THREE.Mesh(new THREE.TorusGeometry(9,1.2,6,32),M(0xbfa77d,{roughness:1}));b.rotation.x=Math.PI/2;b.scale.z=0.6;b.position.y=0.4;g.add(b);
- hot(g,'Antorcha','Cuando el pozo ya da gas, el gas del separador se quema acá, a unos 60 m de pozos y equipos y dentro de un terraplén, hasta que se conecta a la línea de gas.')}
+ hot(g,'Antorcha','Cuando el pozo ya da gas, el gas del separador se quema acá, lejos de pozos y equipos y dentro de un terraplén, hasta que se conecta a la línea de gas.')}
 lbl('Antorcha',[FL[0],22,FL[1]],'');
 // petróleo a la línea de producción (USP / EPF)
 const prodL=poly([[-33,1.4,1.5],[-33,0.6,4],[-30,0.6,4],[-30,0.6,85],[-30,0.6,220]],0.14,0x3d6b3a);hot(prodL,'Línea de producción a USP / EPF','El petróleo separado (y el gas, cuando hay línea) va a la planta separadora: USP o EPF. No se almacena en la locación.');
@@ -272,8 +272,8 @@ PZ.forEach((z,i)=>{const g=new THREE.Group();g.position.set(-10,0.3,z);scene.add
  [[L,H,0.12,0,H/2+0.2,W/2],[L,H,0.12,0,H/2+0.2,-W/2],[0.12,H,W,L/2,H/2+0.2,0],[0.12,H,W,-L/2,H/2+0.2,0]].forEach(a=>box(a[0],a[1],a[2],0x7d8c95,[a[3],a[4],a[5]],g,{metalness:.5}));
  const w=new THREE.Mesh(new THREE.PlaneGeometry(L-0.3,W-0.3),waterRaw);w.rotation.x=-Math.PI/2;w.position.y=0.5+H*0.7;g.add(w);g.userData.w=w;PIL.push(g);
  box(L,0.05,0.05,0xf2c230,[0,H+0.9,W/2-0.05],g);
- hot(g,'Pileta 80 m³','Recibe el agua del separador. Con 4.000 m³/día entran unos 170 m³/h: una pileta se llena en menos de media hora si no se bombea. Hay que sacar el agua sin parar.')});
-lbl('Piletas 80 m³',[-10,5.5,-8],'raw');
+ hot(g,'Pileta','Recibe el agua del separador. Se llena rápido si no se bombea: hay que sacar el agua sin parar.')});
+lbl('Piletas',[-10,5.5,-8],'raw');
 poly([[-33,1.1,-1.6],[-33,0.6,-3],[-24,0.6,-3],[-24,0.6,-16],[-16.5,0.6,-16]],0.1,0x5a3214);
 poly([[-24,0.6,-10.5],[-16.5,0.6,-10.5]],0.1,0x5a3214);poly([[-24,0.6,-5],[-16.5,0.6,-5]],0.1,0x5a3214);poly([[-24,0.6,-3],[-24,0.6,0.5],[-16.5,0.6,0.5]],0.1,0x5a3214);
 // bombeo de transferencia (A/B) desde las piletas
@@ -294,7 +294,7 @@ const SK=[['OXIDACIÓN',0x2e5c8a,'Oxidación','Se dosifica oxidante para precipi
  ['DESINFECCIÓN',0x6a3d7a,'Desinfección','Biocida o UV para que el agua no forme biopelícula en tanques ni en el pozo. No se desaliniza: el agua sigue salada.']];
 const SKX=[24,39,54,69],TRZ=[-11,-5];
 contain(MOV,46.5,-8,56,11,'trenes de tratamiento');
-TRZ.forEach((z,j)=>SK.forEach((s,i)=>{const c=container(SKX[i],z,s[1],s[0],MOV);hot(c,s[2]+' · tren '+(j+1),s[3]+' Cada tren trata unos 105 m³/h.')}));
+TRZ.forEach((z,j)=>SK.forEach((s,i)=>{const c=container(SKX[i],z,s[1],s[0],MOV);hot(c,s[2]+' · tren '+(j+1),s[3]+'')}));
 lbl('2 trenes de tratamiento',[46,5.2,-8],'tre','mov');
 poly([[32,0.6,-31.5],[32,0.6,-18],[16,0.6,-18],[16,0.6,-5],[17.8,0.6,-5]],0.12,0x5a3214,MOV);poly([[16,0.6,-11],[17.8,0.6,-11]],0.12,0x5a3214,MOV);
 TRZ.forEach(z=>{for(let i=0;i<3;i++)poly([[SKX[i]+6,0.9,z],[SKX[i+1]-6,0.9,z]],0.12,i<1?0x5a3214:0x1f5e80,MOV)});
@@ -312,7 +312,7 @@ poly([[75.2,0.6,-11],[78,0.6,-11],[78,0.6,-40],[81.8,0.6,-40]],0.15,0x1f5e80,MOV
 const PS2=pumpStation(MOV,124,-18,0,'Bombeo de despacho (A/B)');
 lbl('Bombeo de despacho',[124,4,-18],'tre','mov');
 poly([[114.2,0.6,-40],[118,0.6,-40],[118,0.6,-18],[PS2.userData.inP.x,0.6,-18]],0.16,0x16181a,MOV);poly([[114.2,0.6,4],[118,0.6,4],[118,0.6,-18]],0.16,0x16181a,MOV);
-layflat([[PS2.userData.outP.x,-18],[132,-18],[132,0],[132,52],[134,54],[300,54]],MOV,'Layflat 12" al próximo pad','Agua tratada hacia el blender del próximo pad, donde se mezcla con agua dulce hasta ~30 % del blend.');
+layflat([[PS2.userData.outP.x,-18],[132,-18],[132,0],[132,52],[134,54],[300,54]],MOV,'Layflat 12" al próximo pad','Agua tratada hacia el blender del próximo pad, donde se mezcla con agua dulce en el blend.');
 lbl('Al blender del próximo pad',[200,3,54],'tre','mov');
 {const g=container(60,25,0xeceeef,'LABORATORIO',MOV,9);box(1.6,1.2,1,0x9aa0a4,[3.5,1.0,1.8],g);hot(g,'Laboratorio','Control antes de mandar al blender: ATP (bacterias), hierro, cloruros, pH y compatibilidad con el reductor de fricción.')}
 lbl('Laboratorio',[60,5,25],'tre','mov');
@@ -321,9 +321,9 @@ lbl('Laboratorio',[60,5,25],'tre','mov');
 // ---------------- MODO CENTRAL: layflat + planta del bloque ----------------
 const CEN=new THREE.Group();scene.add(CEN);
 const LINE_Z=50;
-layflat([[PS1.userData.outP.x,-8],[16,-8],[16,38],[18,40],[148,40],[150,42],[150,48],[152,LINE_Z],[538,LINE_Z],[540,46],[540,40],[553.8,40]],CEN,'Layflat de flowback al bloque','Agua de retorno cruda hacia la planta central, unos 10 km (la escena comprime la distancia). Puede ser layflat TPU, HDPE o cañería enterrada.');
+layflat([[PS1.userData.outP.x,-8],[16,-8],[16,38],[18,40],[148,40],[150,42],[150,48],[152,LINE_Z],[538,LINE_Z],[540,46],[540,40],[553.8,40]],CEN,'Layflat de flowback al bloque','Agua de retorno cruda hacia la planta central (la escena comprime la distancia). Puede ser layflat TPU, HDPE o cañería enterrada.');
 lbl('Layflat de flowback al bloque',[300,3,LINE_Z],'raw','cen');
-[[150,'2 km'],[250,'4 km'],[350,'6 km'],[450,'8 km'],[530,'≈10 km']].forEach(([x,t])=>{box(0.4,1.6,0.4,0xf2c230,[x,1.0,LINE_Z-3],CEN);lbl(t,[x,2.6,LINE_Z-3],'','cen')});
+[[150,'2 km'],[250,'4 km'],[350,'6 km'],[450,'8 km'],[530,'≈10 km']].forEach(([x,t])=>{box(0.4,1.6,0.4,0xf2c230,[x,1.0,LINE_Z-3],CEN)});
 {const g=new THREE.Group();g.position.set(330,0,LINE_Z);CEN.add(g);box(6,0.5,4,0x8b8f93,[0,0.25,0],g);hot(g,'Cruce de camino','Alcantarilla o caño camisa donde la línea cruza un camino: requiere permiso e ingeniería.')}
 const PC=new THREE.Group();PC.position.set(660,0,0);CEN.add(PC);
 const padC=new THREE.Mesh(new THREE.BoxGeometry(260,0.3,220),padMat);padC.position.set(0,0.15,0);padC.receiveShadow=true;PC.add(padC);
@@ -345,7 +345,7 @@ const slC=poly([[-12,0.6,-49],[-12,0.6,-58],[24,0.6,-58],[24,0.6,-68.4]],0.15,0x
 sludgeTank(PC,24,-71,2.6,'Espesador de lodos');filterPress(PC,40,-70);volquete(PC,34,-80);volquete(PC,46,-80);
 lbl('Lodos',[36+660,5,-74],'','cen');
 {const g=new THREE.Group();g.position.set(-40,0.3,-88);PC.add(g);box(14,0.3,10,0x8b8f93,[0,0.15,0],g);cyl(0.6,2.2,0x2c4f8c,[0,1.4,0],g);cyl(0.45,0.5,0xc0392b,[0,2.7,0],g);
- hot(g,'Sumidero (pozo inyector)','Recibe los rechazos y el agua que no conviene tratar. US$ 4 a 8 por m³.')}
+ hot(g,'Sumidero (pozo inyector)','Recibe los rechazos y el agua que no conviene tratar.')}
 const rj=poly([[21.4,0.6,-71],[10,0.6,-71],[10,0.6,-88],[-33,0.6,-88]],0.12,0x5a3214,PC);hot(rj,'Línea de rechazos al sumidero','Rechazos del tratamiento hacia el pozo inyector.');
 lbl('Sumidero',[-40+660,4,-88],'','cen');
 // cañerías internas
@@ -406,7 +406,7 @@ function chainFence(par,pts,name){const g=new THREE.Group();par.add(g);const pos
 function cone(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);const c=new THREE.Mesh(new THREE.ConeGeometry(0.2,0.7,12),M(0xff6a00));c.position.y=0.35;c.castShadow=true;g.add(c);const w=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.16,0.12,12),M(0xffffff));w.position.y=0.42;g.add(w);box(0.4,0.04,0.4,0x222,[0,0.02,0],g);hot(g,'Cono de señalización','Marca circulación y zonas de maniobra.');return g}
 function extinguisher(par,x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);seg([-0.35,0,0],[-0.35,1.6,0],0.03,0xc81e1e,g);seg([0.35,0,0],[0.35,1.6,0],0.03,0xc81e1e,g);box(0.8,0.05,0.4,0xc81e1e,[0,0.25,0],g);
  cyl(0.16,0.7,0xd11f1f,[0,0.65,0],g,null,{roughness:.35});cyl(0.05,0.12,0x222,[0,1.06,0],g);const s=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.4),new THREE.MeshBasicMaterial({map:labelTex('MATAFUEGO','#c81e1e','#ffffff',512,140),side:THREE.DoubleSide}));s.position.set(0,1.5,0);g.add(s);
- hot(g,'Matafuego'+(name?' · '+name:''),'Extintor de polvo químico ABC (y de 50 kg sobre ruedas en áreas de hidrocarburo), señalizado y a la vista, con su tarjeta de control.');return g}
+ hot(g,'Matafuego'+(name?' · '+name:''),'Extintor de polvo químico ABC (y rodante en áreas de hidrocarburo), señalizado y a la vista, con su tarjeta de control.');return g}
 const BEAC=[];
 function gasDetector(par,x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);seg([0,0,0],[0,2.2,0],0.04,0x777,g);box(0.3,0.4,0.18,0xf2c230,[0,1.4,0.1],g);cyl(0.07,0.15,0x333,[0,1.15,0.1],g);
  const b=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,8),new THREE.MeshBasicMaterial({color:0x2bd24a}));b.position.set(0,2.3,0);g.add(b);BEAC.push(b);box(0.2,0.2,0.1,0xcc2222,[0,1.95,0.08],g);
@@ -466,7 +466,7 @@ walker([[766,-97],[778,-97],[778,-96],[766,-96]].map(p=>[p[0]-660,p[1]]),0.6,0x2
 function driver(obj,pts,speed,stops,mode){const cv=new THREE.CatmullRomCurve3(pts.map(p=>v3(p[0],0.3,p[1])),true,'catmullrom',0.3);const L=cv.getLength();let u=Math.random()*0.5,wait=0;const P=v3(),T=v3();
  MOVERS.push({mode,upd(dt){if(wait>0){wait-=dt;return}const u0=u;u=(u+speed*dt/L)%1;for(const s of stops)if(u0<s.u&&u>=s.u){wait=s.t}cv.getPointAt(u,P);cv.getTangentAt(u,T);obj.position.copy(P);obj.rotation.y=Math.atan2(-T.z,T.x)},g:obj})}
 // camión cisterna: entra a la dársena del pad, carga el excedente y vuelve a salir por el carril opuesto
-const tkM=truck(0,0,0,scene);hot(tkM,'Camión cisterna 30 m³','Retira el excedente del pico cuando el retorno supera la capacidad de la planta modular. Carga en la dársena, dentro de la locación.');
+const tkM=truck(0,0,0,scene);hot(tkM,'Camión cisterna','Retira el excedente del pico cuando el retorno supera la capacidad de la planta modular. Carga en la dársena, dentro de la locación.');
 driver(tkM,[[1150,63.5],[400,63.5],[150,63.5],[118,63],[104,54],[92,47.5],[76,44],[68,38],[80,33.5],[104,35],[120,44],[128,56],[150,60.5],[400,60.5],[1150,60.5],[1160,62]],12,[{u:0.2,t:12}],'mov');
 // camión de gasoil: abastece las estaciones de bombeo entre el pad y la planta central
 const tkG=truck(0,0,0,scene,0xf2c230);hot(tkG,'Camión de gasoil','Abastece las cisternas de las estaciones de bombeo del pad y de la planta central.');
@@ -494,50 +494,48 @@ const gasMat=new THREE.MeshBasicMaterial({color:0xb8c0c6,transparent:true,opacit
 
 // ---------------- recorrido ----------------
 const S_COMMON=[
- {t:'Pozos',k:'raw',d:'Después de la fractura se abren los pozos para el flowback, a través del desander y el choke. Con 420.000 m³ inyectados vuelve como máximo unos 100.000 m³, en unos 25 días: ≈ 4.000 m³/día, las 24 horas.',kv:[['Retorno máximo','≈ 100.000 m³'],['Duración','≈ 25 días'],['Caudal medio','≈ 4.000 m³/día · 167 m³/h']],c:[WELLX,2,0],e:[WELLX+30,26,48]},
- {t:'Desander',k:'raw',d:'Retiene la arena antes de que llegue al choke y lo erosione. La arena se descarga y se gestiona como residuo.',kv:[['Función','Separar arena']],c:[-58,2,0],e:[-44,14,22]},
- {t:'Choke manifold',k:'raw',d:'Estrangula el flujo para controlar presión y caudal de cada pozo. Dos ramas permiten cambiar el orificio sin cortar el flowback.',kv:[['Función','Controlar presión y caudal']],c:[-48,1.5,0],e:[-38,10,16]},
- {t:'Separador trifásico',k:'raw',d:'Entra cuando el pozo empieza a dar hidrocarburo. Separa gas, petróleo y agua: el agua va a las piletas; el petróleo, a la línea de producción; el gas, a la antorcha o a la línea de gas.',kv:[['Salidas','Gas · petróleo · agua'],['Contención','Recinto propio']],c:[-33,2.5,0],e:[-18,16,26]},
- {t:'Antorcha',k:'',d:'Con el pozo ya dando gas, el gas del separador se quema a unos 60 m de pozos y equipos, dentro de un terraplén, hasta que se conecta a la línea de gas. En pozos de gas el volumen es mayor: se quema o se manda a la línea; el venteo directo queda para la etapa inicial y emergencias.',kv:[['Distancia en la escena','≈ 60 m'],['Pozo de gas','Antorcha o línea, no venteo']],c:[FL[0],8,FL[1]],e:[FL[0]+34,26,FL[1]+40]},
- {t:'Producción a USP / EPF',k:'',d:'El petróleo separado no se almacena en la locación: va por la línea de producción a la planta separadora (USP o EPF), y el gas también cuando hay línea.',kv:[['Destino','USP / EPF']],c:[-30,1,40],e:[-10,30,90]},
- {t:'Piletas 80 m³',k:'raw',d:'Reciben el agua separada, dentro de un recinto de contención. A 167 m³/h una pileta se llena en menos de media hora si no se bombea: hay que sacar el agua sin parar.',kv:[['Capacidad','4 × 80 m³'],['Caudal medio','≈ 167 m³/h'],['Contención','Geomembrana y bordo']],c:[-10,2,-8],e:[8,20,22]},
- {t:'Bombeo de transferencia',k:'raw',d:'Dos motobombas sobre recinto de contención, A en marcha y B de backup, con derivadores, válvulas y cisterna de gasoil. Toman de las piletas y mandan al tratamiento.',kv:[['Equipos','A en marcha · B backup']],c:[7,1,-8],e:[18,11,10]},
+ {t:'Pozos',k:'raw',d:'Después de la fractura se abren los pozos para el flowback, a través del desander y el choke. Vuelve parte del agua inyectada, casi toda en las primeras semanas y las 24 horas del día.',c:[WELLX,2,0],e:[WELLX+30,26,48]},
+ {t:'Desander',k:'raw',d:'Retiene la arena antes de que llegue al choke y lo erosione. La arena se descarga y se gestiona como residuo.',c:[-58,2,0],e:[-44,14,22]},
+ {t:'Choke manifold',k:'raw',d:'Estrangula el flujo para controlar presión y caudal de cada pozo. Dos ramas permiten cambiar el orificio sin cortar el flowback.',c:[-48,1.5,0],e:[-38,10,16]},
+ {t:'Separador trifásico',k:'raw',d:'Entra cuando el pozo empieza a dar hidrocarburo. Separa gas, petróleo y agua: el agua va a las piletas; el petróleo, a la línea de producción; el gas, a la antorcha o a la línea de gas.',c:[-33,2.5,0],e:[-18,16,26]},
+ {t:'Antorcha',k:'',d:'Con el pozo ya dando gas, el gas del separador se quema lejos de pozos y equipos, dentro de un terraplén, hasta que se conecta a la línea de gas. En pozos de gas el volumen es mayor: se quema o se manda a la línea; el venteo directo queda para la etapa inicial y emergencias.',c:[FL[0],8,FL[1]],e:[FL[0]+34,26,FL[1]+40]},
+ {t:'Producción a USP / EPF',k:'',d:'El petróleo separado no se almacena en la locación: va por la línea de producción a la planta separadora (USP o EPF), y el gas también cuando hay línea.',c:[-30,1,40],e:[-10,30,90]},
+ {t:'Piletas',k:'raw',d:'Reciben el agua separada, dentro de un recinto de contención. Se llenan rápido si no se bombea: hay que sacar el agua sin parar.',c:[-10,2,-8],e:[8,20,22]},
+ {t:'Bombeo de transferencia',k:'raw',d:'Dos motobombas sobre recinto de contención, A en marcha y B de backup, con derivadores, válvulas y cisterna de gasoil. Toman de las piletas y mandan al tratamiento.',c:[7,1,-8],e:[18,11,10]},
 ];
 const S_MOV=[
- {t:'Tanque pulmón en el pad',k:'raw',d:'Amortigua los pulsos del retorno para que los trenes traten a caudal parejo. Unas 6 horas de retorno medio.',kv:[['Volumen','≈ 1.040 m³ · 11 placas'],['Autonomía','≈ 6 h a 167 m³/h']],c:[32,2,-42],e:[52,30,-6]},
- {t:'Oxidación',k:'raw',d:SK[0][3],kv:[['Etapa','1 de 4'],['Trenes','2 × 105 m³/h']],c:[24,2,-8],e:[24,14,16]},
- {t:'Clarificación (DAF)',k:'raw',d:SK[1][3],kv:[['Etapa','2 de 4']],c:[39,2,-8],e:[39,14,16]},
- {t:'Filtración multimedia',k:'tre',d:SK[2][3],kv:[['Etapa','3 de 4']],c:[54,2,-8],e:[54,14,16]},
- {t:'Desinfección',k:'tre',d:SK[3][3],kv:[['Etapa','4 de 4'],['Desalinización','No']],c:[69,2,-8],e:[69,14,16]},
- {t:'Lodos',k:'',d:'Los lodos del clarificador van por cañería a un tanque de lodos, pasan por el filtro prensa y la torta cae a volquetes: residuo especial con manifiesto. El líquido vuelve al tratamiento.',kv:[['Línea','Cañería de lodos'],['Salida','Volquetes con manifiesto']],c:[40,2,16],e:[52,18,40]},
- {t:'Tanques de agua tratada',k:'tre',d:'Guardan el agua tratada hasta que la pida el blender. El calendario manda: guardar mucho tiempo cuesta más de lo que se ahorra.',kv:[['Volumen','2 × 2.480 m³ · 17 placas c/u'],['Autonomía','≈ 30 h']],c:[98,2,-18],e:[136,36,30]},
- {t:'Laboratorio',k:'tre',d:'ATP, hierro, cloruros, pH y compatibilidad con el reductor de fricción. Si no pasa, no va al blender.',kv:[['Tiempo','Hasta 1 día']],c:[60,2,25],e:[68,10,40]},
- {t:'Bombeo de despacho',k:'tre',d:'Dos motobombas sobre recinto de contención toman de los tanques de agua tratada y la mandan por layflat al próximo pad.',kv:[['Equipos','A en marcha · B backup']],c:[124,1,-18],e:[136,12,0]},
- {t:'Al blender del próximo pad',k:'tre',d:'El agua tratada se mezcla con agua dulce hasta un ~30 % del blend en la próxima fractura. Si el retorno supera la capacidad, el excedente sale en camión.',kv:[['Techo de mezcla','≈ 30 %'],['Punta a punta','2 a 12 días']],c:[170,1,40],e:[160,44,120]},
+ {t:'Tanque pulmón en el pad',k:'raw',d:'Amortigua los pulsos del retorno para que los trenes traten a caudal parejo.',c:[32,2,-42],e:[52,30,-6]},
+ {t:'Oxidación',k:'raw',d:SK[0][3],c:[24,2,-8],e:[24,14,16]},
+ {t:'Clarificación (DAF)',k:'raw',d:SK[1][3],c:[39,2,-8],e:[39,14,16]},
+ {t:'Filtración multimedia',k:'tre',d:SK[2][3],c:[54,2,-8],e:[54,14,16]},
+ {t:'Desinfección',k:'tre',d:SK[3][3],c:[69,2,-8],e:[69,14,16]},
+ {t:'Lodos',k:'',d:'Los lodos del clarificador van por cañería a un tanque de lodos, pasan por el filtro prensa y la torta cae a volquetes: residuo especial con manifiesto. El líquido vuelve al tratamiento.',c:[40,2,16],e:[52,18,40]},
+ {t:'Tanques de agua tratada',k:'tre',d:'Guardan el agua tratada hasta que la pida el blender. El calendario manda: guardar mucho tiempo cuesta más de lo que se ahorra.',c:[98,2,-18],e:[136,36,30]},
+ {t:'Laboratorio',k:'tre',d:'ATP, hierro, cloruros, pH y compatibilidad con el reductor de fricción. Si no pasa, no va al blender.',c:[60,2,25],e:[68,10,40]},
+ {t:'Bombeo de despacho',k:'tre',d:'Dos motobombas sobre recinto de contención toman de los tanques de agua tratada y la mandan por layflat al próximo pad.',c:[124,1,-18],e:[136,12,0]},
+ {t:'Al blender del próximo pad',k:'tre',d:'El agua tratada se mezcla con agua dulce en el blend de la próxima fractura. Si el retorno supera la capacidad, el excedente sale en camión.',c:[170,1,40],e:[160,44,120]},
 ];
 const S_CEN=[
- {t:'Layflat al bloque (≈ 10 km)',k:'raw',d:'El retorno viaja por layflat, HDPE o cañería enterrada hasta la planta central. Exige cruces de camino, permisos e ingeniería. La escena comprime la distancia.',kv:[['Distancia estimada','5–20 km · ≈ 10 km'],['Alternativa','≈ 3.500 viajes de camión por pad']],c:[330,1,LINE_Z],e:[300,90,180]},
- {t:'Pulmón de la planta central',k:'raw',d:'Dos tanques que reciben de varios pads y absorben el pico del retorno.',kv:[['Volumen','2 × 2.480 m³ · 17 placas c/u'],['Autonomía','≈ 30 h a 167 m³/h']],c:[570,2,5],e:[520,60,90]},
- {t:'Trenes de tratamiento',k:'raw',d:'Oxidación, clarificación, filtración y desinfección en dos trenes en paralelo, más dos clarificadores circulares. No se desaliniza.',kv:[['Diseño','≈ 5.000 m³/día · 210 m³/h'],['Operación','US$ 2–4/m³']],c:[660,2,-10],e:[640,50,80]},
- {t:'Lodos y sumidero',k:'',d:'Los lodos van por cañería al espesador, pasan por el filtro prensa y salen en volquetes. Los rechazos van por línea al pozo sumidero.',kv:[['Sumidero','US$ 4–8/m³'],['Lodos','Residuo especial con manifiesto']],c:[680,2,-78],e:[700,34,-20]},
- {t:'Agua tratada',k:'tre',d:'Tres tanques que despachan a los pads del bloque según el calendario de fractura.',kv:[['Volumen','3 × 1.930 m³ · 15 placas c/u'],['Inversión planta + tanques','US$ 6–12 M']],c:[740,2,0],e:[800,60,90]},
- {t:'Laboratorio',k:'tre',d:'Mismo control que en el pad: ATP, hierro, cloruros, pH y compatibilidad con el reductor de fricción.',kv:[['Tiempo','Hasta 1 día']],c:[690,2,72],e:[700,16,104]},
- {t:'Bombeo de despacho',k:'tre',d:'Motobombas A y B sobre recinto de contención, con derivadores y cisterna de gasoil, toman de los tanques de agua tratada.',kv:[['Equipos','A en marcha · B backup']],c:[770,1,-90],e:[784,12,-70]},
- {t:'A los pads del bloque',k:'tre',d:'Layflat de agua tratada hacia los pads del bloque, donde se mezcla en el blender hasta ~30 %.',kv:[['Techo de mezcla','≈ 30 %'],['Conviene con','≥ 1 pad por mes en el bloque']],c:[900,1,-90],e:[880,70,40]},
+ {t:'Layflat al bloque',k:'raw',d:'El retorno viaja por layflat, HDPE o cañería enterrada hasta la planta central. Exige cruces de camino, permisos e ingeniería. La escena comprime la distancia.',c:[330,1,LINE_Z],e:[300,90,180]},
+ {t:'Pulmón de la planta central',k:'raw',d:'Dos tanques que reciben de varios pads y absorben el pico del retorno.',c:[570,2,5],e:[520,60,90]},
+ {t:'Trenes de tratamiento',k:'raw',d:'Oxidación, clarificación, filtración y desinfección en dos trenes en paralelo, más dos clarificadores circulares. No se desaliniza.',c:[660,2,-10],e:[640,50,80]},
+ {t:'Lodos y sumidero',k:'',d:'Los lodos van por cañería al espesador, pasan por el filtro prensa y salen en volquetes. Los rechazos van por línea al pozo sumidero.',c:[680,2,-78],e:[700,34,-20]},
+ {t:'Agua tratada',k:'tre',d:'Tres tanques que despachan a los pads del bloque según el calendario de fractura.',c:[740,2,0],e:[800,60,90]},
+ {t:'Laboratorio',k:'tre',d:'Mismo control que en el pad: ATP, hierro, cloruros, pH y compatibilidad con el reductor de fricción.',c:[690,2,72],e:[700,16,104]},
+ {t:'Bombeo de despacho',k:'tre',d:'Motobombas A y B sobre recinto de contención, con derivadores y cisterna de gasoil, toman de los tanques de agua tratada.',c:[770,1,-90],e:[784,12,-70]},
+ {t:'A los pads del bloque',k:'tre',d:'Layflat de agua tratada hacia los pads del bloque, donde se mezcla en el blender.',c:[900,1,-90],e:[880,70,40]},
 ];
 let MODE='mov',STEP=-1;const steps=()=>S_COMMON.concat(MODE==='mov'?S_MOV:S_CEN);
 const OVR={mov:{c:[20,0,-5],e:[-50,150,190]},cen:{c:[470,0,-30],e:[300,560,640]}};
 function renderSteps(){const el=$('steps');el.innerHTML=steps().map((s,i)=>`<button class="${s.k}" data-i="${i}" aria-current="${i===STEP}"><i>${i+1}</i><span>${s.t}</span><small>${i<S_COMMON.length?'locación':MODE==='mov'?'en el pad':'planta central'}</small></button>`).join('');
  el.querySelectorAll('button').forEach(b=>b.onclick=()=>{stopPlay();go(+b.dataset.i)})}
-function renderDist(){$('dist').innerHTML=(MODE==='mov'?`<div>Planta modular</div><b>0 km · en la locación</b><span>A unos 100–200 m de las bocas de pozo, fuera del alcance de la antorcha y de las zonas clasificadas del well testing. Se muda con cada pad.</span>`:
- `<div>Planta central del bloque</div><b>≈ 10 km (rango 5–20 km)</b><span>Estimación: la planta se ubica cerca del centro del bloque o junto a una planta existente, y los pads quedan a 5–20 km. A confirmar con trazas reales.</span>`)+
- `<div style="margin-top:6px">Capacidad de tratamiento</div><b>≈ 167 m³/h · 4.000 m³/día</b><span>Retorno máximo de 100.000 m³ en 25 días. Diseño con margen ≈ 210 m³/h (5.000 m³/día); el pulmón absorbe los picos.</span>`}
+function renderDist(){$('dist').innerHTML=MODE==='mov'?`<div>Planta modular</div><b>En la locación</b><span>Dentro del mismo pad, fuera del alcance de la antorcha y de las zonas clasificadas del well testing. Se muda con cada pad, sin traslados ni cruces de camino.</span>`:`<div>Planta central del bloque</div><b>A varios kilómetros</b><span>Cerca del centro del bloque o junto a una planta existente; los pads le envían el retorno por línea. La escena comprime la distancia.</span>`}
 let camAnim=null;function fly(c,e,d=1.8){camAnim={t:0,d,fT:controls.target.clone(),tT:v3(...c),fE:camera.position.clone(),tE:v3(...e)}}
 function go(i){const S=steps();STEP=i;const s=S[i];$('st-t').innerHTML=`${i+1} · ${s.t} <small>${i<S_COMMON.length?'en la locación':MODE==='mov'?'planta modular en el pad':'planta central del bloque'}</small>`;$('st-d').textContent=s.d;
- $('st-kv').innerHTML=s.kv.map(k=>`<div>${k[0]}<b>${k[1]}</b></div>`).join('');fly(s.c,s.e);renderSteps()}
+ fly(s.c,s.e);renderSteps()}
 function overview(){STEP=-1;const o=OVR[MODE];fly(o.c,o.e);$('st-t').textContent=MODE==='mov'?'Vista general · planta modular en el pad':'Vista general · planta central del bloque';
  $('st-d').textContent=MODE==='mov'?'Todo ocurre en la locación: el well testing separa el agua, que pasa a un pulmón, dos trenes de tratamiento y tanques de agua tratada, y sale por layflat al próximo pad. Todo receptor de flowback está sobre un recinto de contención.':'El well testing es el mismo; el agua sale por layflat hacia una planta central que atiende varios pads. Absorbe mejor el pico y diluye la inversión, pero exige líneas, cruces de camino, permisos e ingeniería.';
- $('st-kv').innerHTML=(MODE==='mov'?[['A tratar','≈ 4.000 m³/día · 167 m³/h'],['Trenes','2 × 105 m³/h'],['Traslado','No']]:[['A tratar por pad','≈ 4.000 m³/día'],['Distancia típica','5–20 km'],['Conviene','≥ 1 pad por mes']]).map(k=>`<div>${k[0]}<b>${k[1]}</b></div>`).join('');renderSteps()}
+renderSteps()}
 function setMode(m){MODE=m;$('m-mov').setAttribute('aria-pressed',String(m==='mov'));$('m-cen').setAttribute('aria-pressed',String(m==='cen'));MOV.visible=m==='mov';CEN.visible=m==='cen';
  flows.mov.forEach(f=>f.m.visible=m==='mov');flows.cen.forEach(f=>f.m.visible=m==='cen');renderDist();stopPlay();overview()}
 $('m-mov').onclick=()=>setMode('mov');$('m-cen').onclick=()=>setMode('cen');$('v-all').onclick=()=>{stopPlay();overview()};
