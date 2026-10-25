@@ -110,16 +110,26 @@ function poly(pts,r,c,par=scene,o){ // tramos rectos con codos (cañería rígid
 function labelTex(txt,bg,fg,w=512,h=128){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,w,h);x.fillStyle=fg;x.font='bold '+Math.round(h*0.42)+'px Arial';x.textAlign='center';x.textBaseline='middle';x.fillText(txt,w/2,h/2);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t}
 
 // ---------------- terreno ----------------
-const gc=document.createElement('canvas');gc.width=gc.height=512;{const x=gc.getContext('2d');x.fillStyle='#c9b48d';x.fillRect(0,0,512,512);for(let i=0;i<14000;i++){const r=Math.random();x.fillStyle=r<.33?'#b8a27a':r<.66?'#d6c39c':'#a89070';x.fillRect(Math.random()*512,Math.random()*512,2,2)}}
+const gc=document.createElement('canvas');gc.width=gc.height=512;{const x=gc.getContext('2d');x.fillStyle='#86664a';x.fillRect(0,0,512,512);for(let i=0;i<9000;i++){const r=Math.random();x.fillStyle=r<.3?'#74583d':r<.55?'#9a7a58':r<.75?'#8d8070':'#634a33';x.fillRect(Math.random()*512,Math.random()*512,2,2)}
+ for(let i=0;i<1100;i++){const cx=Math.random()*512,cy=Math.random()*512,R=4+Math.random()*7;const h=36+Math.random()*10,l=48+Math.random()*16;x.strokeStyle=`hsl(${h},55%,${l}%)`;x.lineWidth=1.2;for(let k=0;k<14;k++){const a=Math.random()*Math.PI*2,rr=R*(0.6+Math.random()*0.6);x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);x.stroke()}x.fillStyle=`hsla(${h},40%,${l-18}%,.8)`;x.beginPath();x.arc(cx,cy,R*0.35,0,6.3);x.fill()}
+ for(let i=0;i<140;i++){const cx=Math.random()*512,cy=Math.random()*512,R=6+Math.random()*8;x.fillStyle=`hsl(${70+Math.random()*30},18%,${24+Math.random()*8}%)`;x.beginPath();x.arc(cx,cy,R,0,6.3);x.fill()}}
 const gTex=new THREE.CanvasTexture(gc);gTex.wrapS=gTex.wrapT=THREE.RepeatWrapping;gTex.repeat.set(120,60);gTex.encoding=THREE.sRGBEncoding;
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(2600,1300,1,1),M(0xffffff,{map:gTex,roughness:1,metalness:0}));ground.rotation.x=-Math.PI/2;ground.position.set(320,0,0);ground.receiveShadow=true;scene.add(ground);
 // bardas al fondo
 {const g=new THREE.PlaneGeometry(2600,240,160,12);const p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);const t=(y+120)/240;p.setZ(i,Math.max(0,t*t)*70*(0.7+0.3*Math.sin(x*0.013)+0.15*Math.sin(x*0.051)))}g.computeVertexNormals();
- const m=new THREE.Mesh(g,M(0xb48a62,{roughness:1,metalness:0}));m.rotation.x=-Math.PI/2;m.position.set(320,0,-640);scene.add(m)}
-// jarillas
-{const geo=new THREE.IcosahedronGeometry(1,0);const mat=M(0x6f7f45,{roughness:1,metalness:0});const N=1400;const im=new THREE.InstancedMesh(geo,mat,N);const d=new THREE.Object3D();let k=0;
- const clear=(x,z)=>(x>-125&&x<155&&z>-85&&z<85)||(x>520&&x<800&&z>-120&&z<120)||(Math.abs(z-62)<12&&x>100&&x<1220)||(Math.abs(z-52)<8&&x>100&&x<560)||(Math.abs(x+30)<5&&z>80)||(Math.abs(z+90)<6&&x>780);
- while(k<N){const x=-500+Math.random()*1600,z=-560+Math.random()*1120;if(clear(x,z))continue;d.position.set(x,0.35,z);const s=0.5+Math.random()*1.1;d.scale.set(s*1.3,s*0.8,s*1.3);d.rotation.y=Math.random()*6;d.updateMatrix();im.setMatrixAt(k++,d.matrix)}im.castShadow=true;scene.add(im)}
+ const m=new THREE.Mesh(g,M(0x9a7458,{roughness:1,metalness:0}));m.rotation.x=-Math.PI/2;m.position.set(320,0,-640);scene.add(m)}
+// estepa patagónica: matas de coirón (pasto amarillo) y arbustos bajos (jarilla, neneo)
+{const clear=(x,z)=>(x>-125&&x<155&&z>-85&&z<85)||(x>520&&x<800&&z>-120&&z<120)||(Math.abs(z-62)<12&&x>100&&x<1220)||(Math.abs(z-52)<8&&x>100&&x<560)||(Math.abs(x+30)<5&&z>80)||(Math.abs(z+90)<6&&x>780);
+ const merge=list=>{let n=0;list.forEach(g=>n+=g.attributes.position.count);const pos=new Float32Array(n*3),nor=new Float32Array(n*3);let o=0;list.forEach(g=>{pos.set(g.attributes.position.array,o*3);nor.set(g.attributes.normal.array,o*3);o+=g.attributes.position.count});const r=new THREE.BufferGeometry();r.setAttribute('position',new THREE.BufferAttribute(pos,3));r.setAttribute('normal',new THREE.BufferAttribute(nor,3));return r};
+ const blades=[];for(let i=0;i<10;i++){const a=i/10*Math.PI*2,t=0.25+0.35*((i*7)%5)/5;const c=new THREE.ConeGeometry(0.06,0.8+0.25*((i*3)%4)/3,3,1).toNonIndexed();c.translate(0,0.4,0);c.rotateZ(t);c.rotateY(a);c.translate(Math.cos(a)*0.06,0,Math.sin(a)*0.06);blades.push(c)}
+ const coiron=merge(blades);coiron.computeVertexNormals();
+ const place=(geo,mat,N,yo,smin,smax,sy,X0=-500,XW=1700,Z0=-560,ZW=1120)=>{const im=new THREE.InstancedMesh(geo,mat,N);const d=new THREE.Object3D();let k=0;const col=new THREE.Color();
+  while(k<N){const x=X0+Math.random()*XW,z=Z0+Math.random()*ZW;if(clear(x,z))continue;d.position.set(x,yo,z);const s=smin+Math.random()*(smax-smin);d.scale.set(s,s*sy,s);d.rotation.set(0,Math.random()*6,0);d.updateMatrix();im.setMatrixAt(k,d.matrix);
+   col.setHSL(0.1+Math.random()*0.035,0.5+Math.random()*0.2,0.48+Math.random()*0.14);im.setColorAt(k,col);k++}im.castShadow=true;scene.add(im);return im};
+ const cm=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,metalness:0,side:THREE.DoubleSide});place(coiron,cm,20000,0.02,1.0,1.9,0.8,-380,1180,-330,660);place(coiron,cm,6000,0.02,1.2,2.2,0.8);
+ const sh=new THREE.IcosahedronGeometry(1,1);{const p=sh.attributes.position;for(let i=0;i<p.count;i++){const n=0.8+0.35*Math.sin(p.getX(i)*7+p.getZ(i)*5);p.setXYZ(i,p.getX(i)*n,p.getY(i)*n,p.getZ(i)*n)}sh.computeVertexNormals()}
+ const im2=place(sh,new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,metalness:0}),2600,0.3,0.6,1.5,0.6,-420,1250,-380,760);
+ {const col=new THREE.Color();for(let i=0;i<2600;i++){col.setHSL(0.16+Math.random()*0.08,0.2+Math.random()*0.12,0.22+Math.random()*0.08);im2.setColorAt(i,col)}}}
 // locación (pad) de ripio
 const padMat=M(0xbfae8a,{roughness:1,metalness:0});
 const pad=new THREE.Mesh(new THREE.BoxGeometry(270,0.3,160),padMat);pad.position.set(15,0.15,0);pad.receiveShadow=true;scene.add(pad);
@@ -137,20 +147,20 @@ const WELLX=-88,WELLZ=[-25,-15,-5,5,15,25];
 const wells=new THREE.Group();scene.add(wells);
 WELLZ.forEach((z,i)=>{const g=new THREE.Group();g.position.set(WELLX,0.3,z);wells.add(g);
  box(3.2,0.2,3.2,0x8b8f93,[0,0.1,0],g);                // platina / contrapozo tapado
- cyl(0.55,0.6,0x2c4f8c,[0,0.5,0],g);                    // cabezal
- for(let k=0;k<4;k++){cyl(0.42,0.5,k%2?0xc0392b:0x2c4f8c,[0,1.05+k*0.55,0],g);cyl(0.62,0.1,0x7a7f84,[0,0.8+k*0.55,0],g)} // válvulas maestras
- box(0.5,0.5,1.6,0xc0392b,[0,2.5,0],g);                 // cruz de flujo
+ cyl(0.55,0.6,0x1f7a80,[0,0.5,0],g);                    // cabezal
+ for(let k=0;k<4;k++){cyl(0.42,0.5,0x1f7a80,[0,1.05+k*0.55,0],g);cyl(0.62,0.1,0x186268,[0,0.8+k*0.55,0],g);if(k%2===0){const w=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.04,6,20),M(0xc81e1e));w.rotation.y=Math.PI/2;w.position.set(-0.75,1.05+k*0.55,0);g.add(w);cyl(0.04,0.35,0x777,[-0.55,1.05+k*0.55,0],g,'x')}} // válvulas maestras con volante
+ box(0.5,0.5,1.6,0x1f7a80,[0,2.5,0],g);                 // cruz de flujo
  [-0.95,0.95].forEach(s=>{const h=cyl(0.28,0.12,0x111111,[0,2.5,s],g,'z');})
- cyl(0.35,0.7,0x2c4f8c,[0,3.1,0],g);cyl(0.5,0.12,0x7a7f84,[0,3.5,0],g);
+ cyl(0.35,0.7,0x1f7a80,[0,3.1,0],g);cyl(0.5,0.12,0x186268,[0,3.5,0],g);const wt=new THREE.Mesh(new THREE.TorusGeometry(0.4,0.04,6,20),M(0xc81e1e));wt.rotation.x=Math.PI/2;wt.position.set(0,3.75,0);g.add(wt);
  // línea de flowback (hierro de alta presión) del ala hacia el colector
- poly([[0,2.5,0.95],[0,2.5,1.6],[0,0.6,1.6],[ -0+4,0.6,1.6],[18-0,0.6,1.6],[18,0.6,0]].map(p=>[p[0],p[1],p[2]]),0.09,0xb03a2e,g);
+ g.userData.line=[[0,2.5,0.95],[0,2.5,1.6],[0,0.6,1.6],[18,0.6,1.6],[18,0.6,0]];
 });
 hot(wells,'Pozos del pad','Seis pozos con su árbol. Después de la fractura se abren de a uno o en grupo para el flowback: devuelven arena, gas, algo de crudo y gran parte del agua inyectada.');
 lbl('Pozos (6)',[WELLX,6,-30],'raw');
 // colector de flowback
-const HX=-70;poly([[HX,0.9,-27],[HX,0.9,27]],0.16,0x9e2f25);
+const HX=-70;
 WELLZ.forEach(z=>{cyl(0.22,0.4,0x1f3e70,[HX,1.25,z+1.6])});
-poly([[HX,0.9,0],[ -62,0.9,0]],0.16,0x9e2f25);
+
 lbl('Colector',[HX,3,-4],'raw');
 
 // ---------------- utilidades de equipos ----------------
@@ -231,29 +241,76 @@ function filterPress(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);
 
 // ---------------- well testing ----------------
 const WT=new THREE.Group();scene.add(WT);
-contain(scene,-53,0,15,6.5,'well testing');
-{const g=new THREE.Group();g.position.set(-58,0.3,0);WT.add(g);box(4,0.3,3,0x3a3f44,[0,0.15,0],g);
- cyl(0.75,4.2,0xe8e2d0,[0,2.5,0],g);const top=new THREE.Mesh(new THREE.SphereGeometry(0.75,16,10,0,Math.PI*2,0,Math.PI/2),M(0xe8e2d0));top.position.set(0,4.6,0);top.castShadow=true;g.add(top);
- cyl(0.15,0.8,0x555,[0,0.6,0.9],g,'z');box(1.2,0.6,0.6,0x7a2b22,[0,0.7,1.3],g);
- hot(g,'Desander','Separa la arena que vuelve con el flujo. Va antes del choke para que la arena no lo erosione. La arena se descarga y se gestiona como residuo.')}
-lbl('Desander',[-58,7,0],'raw');
-{const g=new THREE.Group();g.position.set(-48,0.3,0);WT.add(g);box(5,0.3,3.2,0x3a3f44,[0,0.15,0],g);
- poly([[-2.4,1.0,0],[-1.6,1.0,0],[-1.6,1.0,-0.9],[1.6,1.0,-0.9],[1.6,1.0,0],[2.4,1.0,0]],0.12,0x9e2f25,g);poly([[-1.6,1.0,0],[-1.6,1.0,0.9],[1.6,1.0,0.9],[1.6,1.0,0]],0.12,0x9e2f25,g);
- [-0.9,0.9].forEach(z=>{box(0.6,0.6,0.5,0x2c4f8c,[0,1.0,z],g);cyl(0.06,0.5,0x777,[0,1.5,z],g);const w=new THREE.Mesh(new THREE.TorusGeometry(0.22,0.03,6,16),M(0x111));w.rotation.x=Math.PI/2;w.position.set(0,1.78,z);g.add(w)});
- hot(g,'Choke manifold','Estrangula el flujo para controlar presión y caudal de cada pozo. Dos ramas permiten cambiar el orificio sin cortar el flowback.')}
-lbl('Choke',[-48,4,0],'raw');
-poly([[-57.3,1.0,0],[-50.4,1.3,0]],0.12,0x9e2f25);poly([[-62,0.9,0],[-58.8,0.9,0]],0.16,0x9e2f25);
-contain(scene,-33,0,13,5.4,'separador');
-{const g=new THREE.Group();g.position.set(-33,0.3,0);WT.add(g);box(11,0.3,3.4,0x3a3f44,[0,0.15,0],g);
- [-3.2,3.2].forEach(x=>box(0.4,1.1,1.6,0x3a3f44,[x,0.85,0],g));
- cyl(1.0,8,0xd8dde0,[0,2.4,0],g,'x');[-4,4].forEach(x=>{const c=new THREE.Mesh(new THREE.SphereGeometry(1.0,16,12),M(0xd8dde0));c.scale.set(0.35,1,1);c.position.set(x,2.4,0);c.castShadow=true;g.add(c)});
- box(0.15,0.8,0.6,0xeeeeee,[1,3.6,0],g);cyl(0.1,1.2,0x777,[2.5,3.8,0],g);
- hot(g,'Separador trifásico','Separa gas, petróleo y agua. El gas va a la antorcha o a la línea de gas; el petróleo, a la línea de producción hacia la USP o EPF; el agua de retorno, a las piletas.')}
-lbl('Separador trifásico',[-33,6.2,0],'raw');
-poly([[-45.6,1.0,0],[-38,1.0,0],[-37.4,2.4,0]],0.12,0x9e2f25);
-// gas a antorcha (cuando el pozo ya da gas)
+const BLUE=0x2f6fd6,GREY=0x8d9399,YEL=0xf2c230;
+// skid de equipo: base gris con patines y topes amarillos (como los de la referencia)
+function skid(par,L,W){box(L,0.18,W,0x6d7378,[0,0.09,0],par,{metalness:.5});[-W/2+0.1,W/2-0.1].forEach(z=>{cyl(0.12,L+0.3,0x5d6368,[0,0.12,z],par,'x',{metalness:.5});[-1,1].forEach(s=>cyl(0.14,0.08,YEL,[s*(L/2+0.17),0.12,z],par,'x'))})}
+function gateV(par,x,y,z,ax){const v=new THREE.Group();v.position.set(x,y,z);par.add(v);const b=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.42,0.42),M(BLUE,{metalness:.3}));v.add(b);
+ const bon=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.16,0.5,12),M(BLUE));bon.position.y=0.45;v.add(bon);const st=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.4,6),M(0x999));st.position.y=0.85;v.add(st);
+ const hw=new THREE.Group();hw.position.y=1.05;v.add(hw);for(let i=0;i<3;i++){const sp=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.03,0.03),M(0x8f9396));sp.rotation.y=i*Math.PI/3;hw.add(sp)}
+ [-0.24,0.24].forEach(d=>{const f=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,0.06,14),M(BLUE));f.rotation.z=Math.PI/2;f.position.x=d;if(ax==='z'){f.rotation.z=0;f.rotation.x=Math.PI/2;f.position.set(0,0,d)}v.add(f)});return v}
+// válvula de cierre de emergencia (SDV) con actuador, en jaula
+function sdv(x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);WT.add(g);
+ box(1.3,0.08,1.3,GREY,[0,0.04,0],g);[[-0.6,-0.6],[0.6,-0.6],[-0.6,0.6],[0.6,0.6]].forEach(([a,b])=>seg([a,0,b],[a,2.6,b],0.05,GREY,g));
+ [[-0.6,-0.6,0.6,-0.6],[-0.6,0.6,0.6,0.6],[-0.6,-0.6,-0.6,0.6],[0.6,-0.6,0.6,0.6]].forEach(([a,b,c,d])=>{seg([a,2.6,b],[c,2.6,d],0.05,GREY,g);seg([a,0.1,b],[c,0.1,d],0.05,GREY,g)});
+ cyl(0.28,0.6,BLUE,[0,0.6,0],g);cyl(0.18,0.5,BLUE,[0,1.15,0],g);cyl(0.42,0.75,BLUE,[0,1.75,0],g);const cap=new THREE.Mesh(new THREE.SphereGeometry(0.42,14,8,0,6.3,0,Math.PI/2),M(BLUE));cap.position.y=2.12;g.add(cap);
+ [-0.5,0.5].forEach(d=>cyl(0.22,0.08,BLUE,[d,0.6,0],g,'x'));
+ hot(g,name,'Válvula de cierre de emergencia con actuador neumático: el sistema ESD la cierra sola ante alta o baja presión, o con los pulsadores de pánico.');return g}
+// desarenador ciclónico en bastidor alto con plataforma, baranda y escalera
+function desander(x,z){const g=new THREE.Group();g.position.set(x,0.3,z);WT.add(g);const F=0x7f7d8c;
+ box(3.4,0.12,3.0,0x6d7378,[0,0.06,0],g,{metalness:.5});
+ seg([-1.5,0,-1.3],[-1.5,7.2,-1.3],0.13,F,g);seg([-1.5,0,1.3],[-1.5,7.2,1.3],0.13,F,g);seg([1.4,0,-1.3],[-0.4,7.6,-1.3],0.12,F,g);seg([1.4,0,1.3],[-0.4,7.6,1.3],0.12,F,g);
+ seg([-1.5,7.2,-1.3],[-1.5,7.2,1.3],0.1,F,g);seg([-1.5,3.6,-1.3],[0.5,0.2,-1.3],0.08,F,g);seg([-1.5,3.6,1.3],[0.5,0.2,1.3],0.08,F,g);
+ box(2.8,0.1,2.6,0x6d7378,[0,4.0,0],g);[[-1.4,-1.3,1.4,-1.3],[-1.4,1.3,1.4,1.3],[1.4,-1.3,1.4,1.3]].forEach(([a,b,c,d])=>{seg([a,5.0,b],[c,5.0,d],0.035,YEL,g);seg([a,4.5,b],[c,4.5,d],0.03,YEL,g)});
+ [[-1.4,-1.3],[1.4,-1.3],[-1.4,1.3],[1.4,1.3]].forEach(([a,b])=>seg([a,4.0,b],[a,5.0,b],0.035,YEL,g));
+ [-0.25,0.25].forEach(d=>seg([1.45,0.1,d+0.6],[1.45,4.0,d+0.6],0.035,YEL,g));for(let y=0.4;y<4;y+=0.35)seg([1.45,y,0.35],[1.45,y,0.85],0.025,YEL,g);
+ cyl(0.42,3.6,0xd5d8db,[0,2.1,0],g,null,{metalness:.6,roughness:.35});cyl(0.6,0.5,BLUE,[0,4.3,0],g);cyl(0.68,0.12,BLUE,[0,4.05,0],g);cyl(0.68,0.12,BLUE,[0,4.55,0],g);cyl(0.32,0.6,BLUE,[0,4.95,0],g);gateV(g,0,5.45,0);
+ cyl(0.5,0.3,BLUE,[0,0.45,0],g);[-0.75,0.75].forEach(d=>cyl(0.2,0.3,BLUE,[d,4.3,0],g,'x'));
+ seg([0.8,4.3,0],[0.9,4.3,0.9],0.08,BLUE,g);seg([0.9,4.3,0.9],[0.9,0.6,0.9],0.08,BLUE,g);
+ hot(g,'Desarenador ciclónico','Separa los sólidos del flowback por efecto ciclón antes del choke, para que la arena no lo erosione. Las purgas se pueden automatizar y operar desde la sala de control, sin exponer al operador.');return g}
+// choke manifold de doble ramal sobre skid
+function chokeManifold(x,z){const g=new THREE.Group();g.position.set(x,0.3,z);WT.add(g);skid(g,5.2,2.6);
+ [-0.7,0.7].forEach(zz=>{seg([-2.4,1.0,zz],[2.4,1.0,zz],0.11,BLUE,g);gateV(g,-1.3,1.0,zz);const cb=box(0.6,0.55,0.55,BLUE,[0.2,1.0,zz],g);gateV(g,1.4,1.0,zz);
+  [-2.0,0.2,2.0].forEach(xx=>seg([xx,0.2,zz],[xx,0.78,zz],0.05,GREY,g))});
+ seg([-2.4,1.0,-0.7],[-2.4,1.0,0.7],0.12,BLUE,g);seg([2.4,1.0,-0.7],[2.4,1.0,0.7],0.12,BLUE,g);box(0.3,0.3,0.3,BLUE,[-2.4,1.0,0],g);box(0.3,0.3,0.3,BLUE,[2.4,1.0,0],g);
+ hot(g,'Choke manifold','Doble ramal con caja porta orificio: se cambia el orificio de una rama mientras fluye por la otra, sin cerrar el pozo.');return g}
+// data header (sensores de presión y temperatura antes y después del choke)
+function dataHeader(x,z){const g=new THREE.Group();g.position.set(x,0.3,z);WT.add(g);box(1.6,0.1,0.8,GREY,[0,0.05,0],g);cyl(0.16,1.4,BLUE,[0,0.75,0],g,'x');[-0.35,0.35].forEach(d=>{seg([d,0.75,0],[d,1.3,0],0.03,0x999,g);const gg=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,0.06,16),M(0xeeeeee));gg.rotation.x=Math.PI/2;gg.position.set(d,1.4,0);g.add(gg)});
+ [-0.5,0.5].forEach(d=>seg([d,0.1,0],[d,0.6,0],0.04,GREY,g));hot(g,'Data header','Toma de presión, temperatura y muestras de fluido; transmite a la cabina de well testing.');return g}
+
+contain(scene,-52,1.9,18,10.4,'well testing');
+sdv(-66.8,0,'Válvula de cierre de emergencia (SDV)');lbl('SDV',[-66.8,4.2,-2.5],'raw');
+desander(-58,0);lbl('Desarenador',[-58,9,0],'raw');
+dataHeader(-52.3,0);chokeManifold(-46.5,0);lbl('Choke',[-46.5,3.6,0],'raw');dataHeader(-40.7,0);
+// pileta de sólidos con zaranda: recibe las purgas del desarenador y descarga la arena a contenedor
+{const g=new THREE.Group();g.position.set(-57,0.3,11.5);WT.add(g);const L=10,W=2.6,H=2.2;skid(g,L,W);
+ box(L,H,W,BLUE,[0,0.2+H/2,0],g,{roughness:.55});for(let i=-L/2+0.6;i<L/2;i+=0.9)box(0.08,H,0.05,0x5d6368,[i,0.2+H/2,W/2+0.03],g);
+ box(L,0.06,W,0xd9b82a,[0,0.25+H,0],g,{roughness:.8});[[-L/2,-W/2,L/2,-W/2],[-L/2,W/2,L/2,W/2],[-L/2,-W/2,-L/2,W/2]].forEach(([a,b,c,d])=>{seg([a,0.3+H+1.0,b],[c,0.3+H+1.0,d],0.035,YEL,g);seg([a,0.3+H+0.5,b],[c,0.3+H+0.5,d],0.03,YEL,g)});
+ for(let i=-L/2;i<=L/2;i+=1.25){seg([i,0.3+H,-W/2],[i,0.3+H+1.0,-W/2],0.03,YEL,g);seg([i,0.3+H,W/2],[i,0.3+H+1.0,W/2],0.03,YEL,g)}
+ const zr=new THREE.Group();zr.position.set(L/2-1.4,0.3+H,0);g.add(zr);box(2.2,0.7,2.0,0xe0661a,[0,0.45,0],zr);box(2.0,0.15,1.8,0x3a3d40,[0.1,0.85,0],zr);[-0.5,0.5].forEach(d=>cyl(0.22,0.4,0x2a2c2e,[-0.3,1.1,d],zr,'z'));
+ const ch=box(1.6,0.08,1.4,0xb8bec4,[1.9,0.15,0],zr,{metalness:.6});ch.rotation.z=-0.45;
+ seg([-1.6,0.6,0],[-1.6,1.9,0],0.07,0x9aa0a6,zr);seg([-1.6,1.9,0],[0.6,1.9,0],0.07,0x9aa0a6,zr);seg([0.6,1.9,0],[0.6,1.0,0],0.07,0x9aa0a6,zr);
+ hot(g,'Pileta de sólidos con zaranda','Recibe las purgas del desarenador. La zaranda separa y pesa la arena y la descarga al contenedor; el líquido queda en la pileta y va a las piletas de flowback.')}
+contain(scene,-54,11.5,19,4.6,'pileta de sólidos y contenedor');lbl('Pileta de sólidos · zaranda',[-58,5.5,11.5],'');
+volquete(scene,-47.4,11.5,'Contenedor de arena');lbl('Arena del desarenador',[-47.4,3.4,11.5],'');
+pipe([[-57.1,1.0,0.9],[-57.1,0.6,2.5],[-57.1,0.6,7],[-57.1,3.0,9.5],[-59,3.0,10.5]],0.09,0x5d6368);
+// panel ESD con pulsadores de pánico y cámaras de monitoreo
+{const g=new THREE.Group();g.position.set(-44,0.3,6);WT.add(g);box(1.2,0.1,0.8,GREY,[0,0.05,0],g);box(1.0,1.5,0.6,0xc7ccd0,[0,0.95,0],g,{metalness:.7,roughness:.25});box(0.8,0.6,0.02,0x1d2a36,[0,1.2,0.31],g,{metalness:.6,roughness:.1});
+ const pb=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),M(0xd01e1e,{emissive:0x500000}));pb.position.set(0.3,0.6,0.32);g.add(pb);
+ hot(g,'Panel ESD','Comanda la válvula de cierre de emergencia por alta o baja presión. Tiene pulsadores de pánico: uno acá y otro junto a la cabina de well testing.')}
+lbl('Panel ESD',[-44,3,6],'');
+[[-62,-4.2],[-30,8]].forEach(([x,z])=>{const g=new THREE.Group();g.position.set(x,0.3,z);scene.add(g);seg([0,0,0],[0,4.5,0],0.05,0x9aa0a6,g);box(0.35,0.22,0.22,0xf2f2f2,[0.15,4.5,0],g);cyl(0.07,0.12,0x111,[0.38,4.5,0],g,'x');hot(g,'Cámara de monitoreo','Permite ver la operación en tiempo real desde la sala de control o un dispositivo autorizado.')});
+
+// separador trifásico horizontal plateado sobre skid, con línea de gas amarilla
+contain(scene,-31,0,13,5.4,'separador');
+{const g=new THREE.Group();g.position.set(-31,0.3,0);WT.add(g);skid(g,10.5,3.0);
+ [-3.0,3.0].forEach(x=>box(0.5,1.2,1.5,0x6d7378,[x,0.85,0],g));
+ cyl(1.0,7.6,0xcfd3d7,[0,2.4,0],g,'x',{metalness:.75,roughness:.28});[-3.8,3.8].forEach(x=>{const c=new THREE.Mesh(new THREE.SphereGeometry(1.0,16,12),M(0xcfd3d7,{metalness:.75,roughness:.28}));c.scale.set(0.35,1,1);c.position.set(x,2.4,0);c.castShadow=true;g.add(c)});
+ cyl(0.45,0.5,0xcfd3d7,[-1.5,3.5,0],g,null,{metalness:.7});box(0.3,0.5,0.3,0x555,[2,3.6,0],g);
+ hot(g,'Separador trifásico','Separa gas, petróleo y agua por gravedad. El gas va a la antorcha o a la línea de gas; el petróleo, a la línea de producción hacia la USP o EPF; el agua de retorno, a las piletas.')}
+lbl('Separador trifásico',[-31,6.2,0],'raw');
+// gas a antorcha (cañería amarilla)
 const FL=[-38,-62];
-const gasL=poly([[-33,3.4,0],[-33,3.6,-2],[-33,0.6,-6],[-38,0.6,-12],[-38,0.6,-58]],0.1,0x9aa3aa);hot(gasL,'Línea de gas a antorcha','Gas separado hacia la antorcha.');
+const gasL=poly([[-32.5,3.8,0],[-32.5,5.2,0],[-32.5,5.2,-3],[-32.5,0.6,-6],[-38,0.6,-12],[-38,0.6,-58]],0.12,0xe8c21a);hot(gasL,'Línea de gas a antorcha','Gas separado hacia la antorcha.');
 {const g=new THREE.Group();g.position.set(FL[0],0.3,FL[1]);scene.add(g);box(3,0.4,3,0x555a60,[0,0.2,0],g);cyl(0.35,16,0x6a6f75,[0,8.4,0],g);cyl(0.5,0.6,0x333,[0,16.6,0],g);
  [0,2.1,4.2].forEach(a=>seg([Math.cos(a)*3,0.3,Math.sin(a)*3],[0,15,0],0.035,0x888,g));
  const fl=new THREE.Mesh(new THREE.ConeGeometry(0.9,4,12,1,true),new THREE.MeshBasicMaterial({color:0xffa53a,transparent:true,opacity:.85}));fl.position.set(0,19,0);g.add(fl);scene.userData.flame=fl;
@@ -261,20 +318,42 @@ const gasL=poly([[-33,3.4,0],[-33,3.6,-2],[-33,0.6,-6],[-38,0.6,-12],[-38,0.6,-5
  hot(g,'Antorcha','Cuando el pozo ya da gas, el gas del separador se quema acá, lejos de pozos y equipos y dentro de un terraplén, hasta que se conecta a la línea de gas.')}
 lbl('Antorcha',[FL[0],22,FL[1]],'');
 // petróleo a la línea de producción (USP / EPF)
-const prodL=poly([[-33,1.4,1.5],[-33,0.6,4],[-30,0.6,4],[-30,0.6,85],[-30,0.6,220]],0.14,0x3d6b3a);hot(prodL,'Línea de producción a USP / EPF','El petróleo separado (y el gas, cuando hay línea) va a la planta separadora: USP o EPF. No se almacena en la locación.');
+const prodL=poly([[-31,1.4,1.5],[-31,0.6,4],[-30,0.6,4],[-30,0.6,85],[-30,0.6,220]],0.14,0x3d6b3a);hot(prodL,'Línea de producción a USP / EPF','El petróleo separado (y el gas, cuando hay línea) va a la planta separadora: USP o EPF. No se almacena en la locación.');
 lbl('Producción a USP / EPF',[-30,3,70],'');
-// piletas de 80 m³ dentro de su recinto
+
+// líneas de alta presión: funda antilátigo, eslinga de seguridad a lo largo y dados de anclaje
+const DADO=new THREE.BoxGeometry(0.7,0.55,0.7),dadoM=M(0x9a9a96,{roughness:.95});
+function sockLine(pts,r,par=scene,name){const g=poly(pts,r,0x2a5fc9,par,{metalness:.1,roughness:.8});
+ for(let i=0;i<pts.length-1;i++){const a=v3(...pts[i]),b=v3(...pts[i+1]);const L=a.distanceTo(b);const dir=b.clone().sub(a).normalize();const q=new THREE.Quaternion().setFromUnitVectors(v3(0,1,0),dir);
+  const n=Math.floor(L/1.4);for(let k=1;k<=n;k++){const p=a.clone().lerp(b,k/(n+1));const m=new THREE.Mesh(new THREE.CylinderGeometry(r*1.25,r*1.25,0.28,10),M(0xc8231e,{roughness:.7}));m.position.copy(p);m.quaternion.copy(q);g.add(m)}
+  // eslinga de seguridad (cable de retención) por encima de la línea
+  const off=v3(0,r+0.07,0);const c=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,L,6),M(0xff8a1f,{roughness:.6}));c.position.copy(a).lerp(b,.5).add(off);c.quaternion.copy(q);g.add(c);
+  // dados de seguridad de hormigón con abrazadera, en tramos a nivel del suelo
+  if(Math.abs(a.y-b.y)<0.2&&a.y<1.4){const nd=Math.floor(L/5);for(let k=1;k<=nd;k++){const p=a.clone().lerp(b,k/(nd+1));const side=v3(-dir.z,0,dir.x).multiplyScalar(r+0.5);
+   const d=new THREE.Mesh(DADO,dadoM);d.position.set(p.x+side.x,0.3+0.275,p.z+side.z);d.castShadow=true;g.add(d);
+   const s=new THREE.Mesh(new THREE.TorusGeometry(r+0.04,0.025,6,14),M(0xff8a1f));s.position.copy(p);s.quaternion.copy(q);s.rotateX(Math.PI/2);g.add(s);
+   const st=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,side.length(),6),M(0xff8a1f));st.position.set(p.x+side.x/2,p.y,p.z+side.z/2);st.quaternion.setFromUnitVectors(v3(0,1,0),side.clone().normalize());g.add(st)}}}
+ hot(g,name||'Línea de flowback','Hierro de alta presión con funda antilátigo, eslinga de seguridad a lo largo de la línea y dados de hormigón que la anclan al piso: si una unión cede, la línea no latiguea.');return g}
+wells.children.forEach(g=>{sockLine(g.userData.line.map(p=>[p[0]+WELLX,p[1]+0.3,p[2]+g.position.z]),0.09,scene,'Línea de flowback del pozo')});
+sockLine([[HX,0.9,-27],[HX,0.9,27]],0.16,scene,'Colector de flowback');sockLine([[HX,0.9,0],[-67.3,0.9,0]],0.16,scene,'Línea a la SDV');sockLine([[-66.3,0.9,0],[-58.9,0.75,0]],0.16,scene,'Entrada al desarenador');
+sockLine([[-57.1,0.75,0],[-53.1,1.05,0]],0.12,scene,'Línea al data header');sockLine([[-51.5,1.05,0],[-49.1,1.3,0]],0.12,scene,'Entrada al choke');
+sockLine([[-43.9,1.3,0],[-41.5,1.05,0]],0.12,scene,'Salida del choke');sockLine([[-39.9,1.05,0],[-38,1.05,0],[-36.5,2.4,0]],0.12,scene,'Línea al separador');
+WELLZ.forEach(z=>{const g=new THREE.Group();g.position.set(WELLX,0.3,z);scene.add(g);const b=new THREE.Mesh(new THREE.BoxGeometry(4.4,0.06,4.4),M(0x2f6fd6,{roughness:.8}));b.position.y=0.03;g.add(b);
+ [[4.4,0.25,0.15,0,2.2],[4.4,0.25,0.15,0,-2.2],[0.15,0.25,4.4,2.2,0],[0.15,0.25,4.4,-2.2,0]].forEach(a=>box(a[0],a[1],a[2],0x2a62c9,[a[3],0.12,a[4]],g));hot(g,'Contención del árbol','Bandeja azul bajo cada cabeza de pozo para contener goteos y pérdidas en uniones.')});
+
+// piletas de flowback sobre skid: azules, con piso de rejilla, baranda y buffer tube de entrada
 contain(scene,-10,-7.7,15.4,23,'piletas');
 const PIL=[];const PZ=[-16,-10.5,-5,0.5];
-const waterRaw=M(0x8a5a32,{roughness:.15,metalness:.2});
-PZ.forEach((z,i)=>{const g=new THREE.Group();g.position.set(-10,0.3,z);scene.add(g);
- const L=12,W=3.6,H=2.6;box(L,0.25,W,0x2f3236,[0,0.12,0],g);
- [[L,H,0.12,0,H/2+0.2,W/2],[L,H,0.12,0,H/2+0.2,-W/2],[0.12,H,W,L/2,H/2+0.2,0],[0.12,H,W,-L/2,H/2+0.2,0]].forEach(a=>box(a[0],a[1],a[2],0x7d8c95,[a[3],a[4],a[5]],g,{metalness:.5}));
- const w=new THREE.Mesh(new THREE.PlaneGeometry(L-0.3,W-0.3),waterRaw);w.rotation.x=-Math.PI/2;w.position.y=0.5+H*0.7;g.add(w);g.userData.w=w;PIL.push(g);
- box(L,0.05,0.05,0xf2c230,[0,H+0.9,W/2-0.05],g);
- hot(g,'Pileta','Recibe el agua del separador. Se llena rápido si no se bombea: hay que sacar el agua sin parar.')});
-lbl('Piletas',[-10,5.5,-8],'raw');
-poly([[-33,1.1,-1.6],[-33,0.6,-3],[-24,0.6,-3],[-24,0.6,-16],[-16.5,0.6,-16]],0.1,0x5a3214);
+PZ.forEach((z,i)=>{const g=new THREE.Group();g.position.set(-10,0.3,z);scene.add(g);const L=12,W=3.2,H=2.3;skid(g,L,W);
+ box(L,H,W,BLUE,[0,0.2+H/2,0],g,{roughness:.55});for(let x=-L/2+0.5;x<L/2;x+=1.0){box(0.09,H,0.05,0x5d6368,[x,0.2+H/2,W/2+0.03],g);box(0.09,H,0.05,0x5d6368,[x,0.2+H/2,-W/2-0.03],g)}
+ box(L,0.06,W,0xd9b82a,[0,0.25+H,0],g,{roughness:.8});
+ [[-L/2,-W/2,L/2,-W/2],[-L/2,W/2,L/2,W/2],[-L/2,-W/2,-L/2,W/2],[L/2,-W/2,L/2,W/2]].forEach(([a,b,c,d])=>{seg([a,0.3+H+1.0,b],[c,0.3+H+1.0,d],0.035,YEL,g);seg([a,0.3+H+0.5,b],[c,0.3+H+0.5,d],0.03,YEL,g)});
+ for(let x=-L/2;x<=L/2;x+=1.5){seg([x,0.3+H,-W/2],[x,0.3+H+1.0,-W/2],0.03,YEL,g);seg([x,0.3+H,W/2],[x,0.3+H+1.0,W/2],0.03,YEL,g)}
+ [-0.35,0,0.35].forEach(d=>cyl(0.12,2.4,0xb8bec4,[-L/2+1.6,0.3+H+0.45,d],g,'x',{metalness:.6}));seg([-L/2+1.6,0.3+H,-0.6],[-L/2+1.6,0.3+H+0.45,-0.6],0.04,0x777,g);
+ g.userData.w=new THREE.Object3D();PIL.push(g);
+ hot(g,'Pileta de flowback','Pileta sobre skid con doble compartimiento y buffer tube de entrada. Recibe el agua del separador; la arena fina que pasa el desarenador decanta en el fondo y se retira con camión de vacío a un volquete, como residuo especial.')});
+lbl('Piletas',[-10,5.5,-8],'raw');volquete(scene,-31,-30,'Volquete de arena de piletas');lbl('Arena de piletas',[-31,3.5,-30],'');
+poly([[-31,1.1,-1.6],[-31,0.6,-3],[-24,0.6,-3],[-24,0.6,-16],[-16.5,0.6,-16]],0.1,0x5a3214);
 poly([[-24,0.6,-10.5],[-16.5,0.6,-10.5]],0.1,0x5a3214);poly([[-24,0.6,-5],[-16.5,0.6,-5]],0.1,0x5a3214);poly([[-24,0.6,-3],[-24,0.6,0.5],[-16.5,0.6,0.5]],0.1,0x5a3214);
 // bombeo de transferencia (A/B) desde las piletas
 const PS1=pumpStation(scene,7,-8,0,'Bombeo de transferencia (A/B)');
@@ -378,7 +457,9 @@ function trailer(x,z,ry,txt,par=scene){const g=container(x,z,0xeef0f1,txt,par,12
 // campamento en el sector libre al sur del laboratorio, lejos de pozos, antorcha, piletas y del recorrido de camiones
 contain(scene,40,70,8,3.6,'generador y gasoil');
 trailer(8,48,0,'COMEDOR');trailer(8,55,0,'DORMITORIO');trailer(8,62,0,'DORMITORIO');trailer(26,48,0,'OFICINA');
-[0,1,2].forEach(i=>{const g=new THREE.Group();g.position.set(22+i*1.6,0.3,57);scene.add(g);box(1.2,2.2,1.2,0x2b6cd6,[0,1.1,0],g);box(1.25,0.15,1.25,0xeeeeee,[0,2.25,0],g);hot(g,'Baño químico','Servicio sanitario del campamento.')});
+{const g=new THREE.Group();g.position.set(25,0.3,58.5);scene.add(g);box(7,0.2,2.8,0x6d7378,[0,0.1,0],g);cyl(1.1,5.2,0xe9ebe6,[-0.6,1.3,0],g,'x',{roughness:.5});[-2.6,-0.6,1.4].forEach(x=>{cyl(0.25,0.3,0x2b6cd6,[x,2.5,0],g)});box(1.1,1.6,1.0,0x9aa0a6,[2.8,1.0,0],g,{metalness:.5});box(0.8,0.5,0.03,0x2b6cd6,[2.8,1.3,0.52],g);
+ pipe([[-12,0.4,-3.5],[-12,0.4,0],[-3.4,0.4,0]],0.08,0x7a6a52,g);
+ hot(g,'Planta compacta de tratamiento cloacal','Trata los efluentes de los baños y la cocina del campamento (tipo BACSA): el agua tratada se reusa o se dispone según el permiso, y los barros se retiran con camión atmosférico.')}lbl('Planta cloacal',[25,4.5,58.5],'');
 {const g=new THREE.Group();g.position.set(32,0.3,57);scene.add(g);cyl(1.2,2.4,0xf2f2f0,[0,1.5,0],g);box(2.8,0.3,2.8,0x9aa0a4,[0,0.15,0],g);hot(g,'Tanque de agua potable','Agua para el campamento.')}
 {const g=new THREE.Group();g.position.set(40,0.3,70);scene.add(g);box(3.4,1.6,1.4,0xe8b90c,[0,0.95,0],g);box(0.2,0.6,0.2,0x333,[1.2,2.0,0],g);hot(g,'Grupo electrógeno','Energía para el campamento y la iluminación.')}
 lbl('Campamento',[14,5,55],'');
@@ -422,7 +503,7 @@ function sign(par,x,z,ry,lines,name){const g=new THREE.Group();g.position.set(x,
  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;const p=new THREE.Mesh(new THREE.PlaneGeometry(2.6,1.6),new THREE.MeshBasicMaterial({map:t,side:THREE.DoubleSide}));p.position.y=2.2;g.add(p);
  hot(g,name,lines.map(l=>l[0]).join(' · '));return g}
 // mangas de viento
-windsock(scene,-60,-34,'well testing');windsock(scene,-26,-26,'piletas');windsock(scene,-4,66,'campamento');windsock(MOV,74,-22,'tratamiento');lbl('Manga de viento',[-4,10.5,66],'');lbl('Manga de viento',[-60,10.5,-34],'');windsock(PC,-120,96,'planta central');
+windsock(scene,-60,-34,'well testing');{const g=container(-36,13,0xd6d9dc,'WELL TESTING',scene,6);box(1.2,0.8,0.3,0x333,[1.5,1.6,1.35],g);hot(g,'Cabina de well testing','Registro de presiones, caudales y muestras de cada pozo; desde acá se coordinan los cambios de choke.')}windsock(scene,-40.5,16,'cabina de well testing');windsock(scene,-26,-26,'piletas');windsock(scene,-4,66,'campamento');windsock(MOV,74,-22,'tratamiento');lbl('Manga de viento',[-4,10.5,66],'');lbl('Manga de viento',[-60,10.5,-34],'');windsock(PC,-120,96,'planta central');
 // puntos de encuentro en extremos opuestos
 meetPoint(scene,-110,-70,1);meetPoint(scene,146,-30,2);meetPoint(scene,-12,70,3);lbl('Punto de encuentro 1',[-110,4,-70],'');lbl('Punto de encuentro 2',[146,4,-30],'');lbl('Punto de encuentro 3',[-12,4,70],'');
 meetPoint(PC,-115,-100,1);meetPoint(PC,120,100,2);
@@ -445,6 +526,54 @@ sign(scene,146,51,-Math.PI/2,[['LOCACIÓN · FLOWBACK','#1f3a4d','#ffffff'],['US
 sign(scene,-66,-36,Math.PI/2,[['ÁREA CLASIFICADA','#f2c230','#111'],['ALTA PRESIÓN','#f2c230','#111'],['SOLO PERSONAL AUTORIZADO','#c81e1e','#ffffff']],'Cartel de zona clasificada');
 sign(PC,-128,40,Math.PI/2,[['PLANTA DE TRATAMIENTO','#1f3a4d','#ffffff'],['USO OBLIGATORIO DE EPP','#1f5fbf','#ffffff'],['PROHIBIDO FUMAR','#c81e1e','#ffffff']],'Cartel de ingreso a la planta');
 lbl('Zona delimitada',[-81,3,-36],'');
+// ---------------- iluminación, residuos, campamentos y servicios ----------------
+function lightCart(par,x,z,ry,name){const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=ry||0;par.add(g);
+ box(3.2,1.3,1.6,0xd23a1e,[0,0.95,0],g,{roughness:.45});box(3.4,0.12,1.7,0x2a2c2e,[0,0.3,0],g);[-0.9,0.9].forEach(zz=>cyl(0.35,0.25,0x111,[-0.4,0.35,zz*1.0],g,'z'));
+ seg([1.7,0.35,0],[2.8,0.35,0],0.05,0x2a2c2e,g);[[1.4,0.8],[1.4,-0.8],[-1.4,0.8],[-1.4,-0.8]].forEach(([a,b])=>seg([a,0.3,b],[a*1.3,0.02,b*1.8],0.04,0x777,g));
+ seg([0,1.6,0],[0,8.5,0],0.09,0xc9ced1,g);box(1.6,0.1,0.1,0x444,[0,8.6,0],g);
+ [[-0.55,0.35],[0.55,0.35],[-0.55,-0.35],[0.55,-0.35]].forEach(([a,b])=>{box(0.5,0.4,0.18,0x333,[a,8.95+b*0.6+0.2,0.12],g);const l=new THREE.Mesh(new THREE.PlaneGeometry(0.42,0.32),new THREE.MeshBasicMaterial({color:0xfff6d8}));l.position.set(a,8.95+b*0.6+0.2,0.22);g.add(l)});
+ hot(g,name||'Torre de iluminación','Carro de iluminación con mástil telescópico y cuatro reflectores, con su propio generador: turno nocturno y circulación segura. Se ancla con estabilizadores.');return g}
+function mastTower(par,x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);box(3,0.6,3,0x9a9a96,[0,0.3,0],g);
+ const h=24;[[-0.5,-0.5],[0.5,-0.5],[-0.5,0.5],[0.5,0.5]].forEach(([a,b])=>seg([a*1.6,0.6,b*1.6],[a*0.5,h,b*0.5],0.07,0xa0a6aa,g));for(let y=2;y<h;y+=2.2){const s=1.6-(1.1)*(y/h);[[-1,-1,1,-1],[1,-1,1,1],[1,1,-1,1],[-1,1,-1,-1]].forEach(([a,b,c,d])=>seg([a*s/2,y,b*s/2],[c*s/2,y,d*s/2],0.04,0xa0a6aa,g))}
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,0.08,6,24),M(0x666));ring.rotation.x=Math.PI/2;ring.position.y=h;g.add(ring);
+ for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const f=new THREE.Group();f.position.set(Math.cos(a)*1.6,h+0.3,Math.sin(a)*1.6);f.rotation.y=-a+Math.PI/2;g.add(f);const b=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,0.25),M(0x333));f.add(b);const l=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.4),new THREE.MeshBasicMaterial({color:0xfff6d8,side:THREE.DoubleSide}));l.position.z=0.13;f.add(l);f.rotateX(0.5)}
+ hot(g,name||'Torre de iluminación central','Torre fija de gran altura con múltiples reflectores: ilumina toda la planta de noche desde un solo punto, alimentada por la red eléctrica.');return g}
+function bins(par,x,z,ry){const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=ry||0;par.add(g);box(4.6,0.12,1.2,0x9a9a96,[0,0.06,0],g);
+ [['#2e9d48','RECICLABLE'],['#f2c230','PELIGROSO'],['#222222','GENERAL'],['#2b6cd6','PLÁSTICO']].forEach(([c,t],i)=>{const x0=-1.65+i*1.1;const col=new THREE.Color(c);cyl(0.42,1.0,col.getHex(),[x0,0.62,0],g,null,{roughness:.5},16);cyl(0.45,0.08,col.getHex(),[x0,1.16,0],g,null,{},16);
+  const lb=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.22),new THREE.MeshBasicMaterial({map:labelTex(t,'#ffffff','#111',512,140)}));lb.position.set(x0,0.75,0.43);g.add(lb)});
+ hot(g,'Punto de residuos','Tachos diferenciados por color: reciclables, peligrosos (trapos y absorbentes con hidrocarburo), generales y plásticos. Los peligrosos salen con manifiesto.');return g}
+function bacsa(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);box(7,0.2,2.8,0x6d7378,[0,0.1,0],g);cyl(1.1,5.2,0xe9ebe6,[-0.6,1.3,0],g,'x',{roughness:.5});[-2.6,-0.6,1.4].forEach(xx=>cyl(0.25,0.3,0x2b6cd6,[xx,2.5,0],g));box(1.1,1.6,1.0,0x9aa0a6,[2.8,1.0,0],g,{metalness:.5});
+ hot(g,'Planta compacta de tratamiento cloacal','Trata los efluentes de baños y cocina (tipo BACSA); los barros se retiran con camión atmosférico.');return g}
+function waterTank(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);cyl(1.4,2.8,0xf2f2f0,[0,1.7,0],g);box(3.2,0.3,3.2,0x9aa0a4,[0,0.15,0],g);hot(g,'Tanque de agua','Agua para consumo, cocina e higiene del personal.');return g}
+function generator(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);box(3.4,1.6,1.4,0xe8b90c,[0,0.95,0],g);box(0.2,0.6,0.2,0x333,[1.2,2.0,0],g);hot(g,'Grupo electrógeno','Energía de respaldo del campamento.');return g}
+function campFence(par,pts,name){return chainFence(par,pts,name||'campamento')}
+// --- pad (ambos modos)
+lightCart(scene,-58,-20,0,'Torre de iluminación · pozos y well testing');lightCart(scene,-22,-25,0,'Torre de iluminación · piletas');lightCart(scene,4,-26,0,'Torre de iluminación · bombeo');lightCart(scene,36,46,0,'Torre de iluminación · campamento');
+lightCart(MOV,8,-30,Math.PI/2,'Torre de iluminación · tratamiento');lightCart(MOV,112,-66,0,'Torre de iluminación · tanques');lightCart(MOV,62,14,0,'Torre de iluminación · lodos y laboratorio');
+lbl('Torre de iluminación',[-58,11,-20],'');
+campFence(scene,[[46,70],[46,43],[-2,43],[-2,79.5],[46,79.5],[46,76.5]],'campamento');lbl('Campamento delimitado',[22,3,43],'');
+bins(scene,30,66,0);bins(scene,-34,18.5,0);bins(MOV,64,-21.5,0);
+// --- planta central: servicios faltantes
+mastTower(PC,-60,88,'Torre de iluminación central');lbl('Torre de iluminación central',[-60+660,28,88],'','cen');
+lightCart(PC,40,-46,0,'Torre de iluminación · clarificadores y lodos');lightCart(PC,112,22,0,'Torre de iluminación · agua tratada');lightCart(PC,-112,-60,0,'Torre de iluminación · pulmón');
+// campamento de la planta central, delimitado
+trailer(58,92,0,'COMEDOR',PC);trailer(58,99,0,'DORMITORIO',PC);trailer(76,92,0,'OFICINA',PC);bacsa(PC,96,95);waterTank(PC,88,86);generator(PC,74,101);bins(PC,104,103,0);
+campFence(PC,[[110,92],[110,84],[46,84],[46,107],[110,107],[110,98]],'campamento de la planta central');
+lbl('Campamento',[66+660,5,95],'','cen');lbl('Planta cloacal',[96+660,4.5,95],'','cen');
+// línea eléctrica de media tensión y subestación
+{const g=new THREE.Group();scene.add(g);CEN.add(g);const xs=[];for(let x=1150;x>=800;x-=50)xs.push(x);const Z=69;
+ xs.forEach(x=>{seg([x,0.3,Z],[x,10,Z],0.14,0x6b5a45,g);box(2.4,0.15,0.15,0x6b5a45,[x,9.5,Z],g);[-1,0,1].forEach(d=>cyl(0.06,0.2,0xdddddd,[x+d*1.0,9.7,Z],g))});
+ for(let i=0;i<xs.length-1;i++)[-1,0,1].forEach(d=>{const N=8;for(let k=0;k<N;k++){const t0=k/N,t1=(k+1)/N,sg=t=>0.8*4*t*(1-t);seg([xs[i]+d-(50)*t0,9.8-sg(t0),Z],[xs[i]+d-50*t1,9.8-sg(t1),Z],0.02,0x333,g)}});
+ [-1,0,1].forEach(d=>seg([800+d,9.8,Z],[786,4.2,75],0.02,0x333,g));
+ hot(g,'Línea eléctrica de media tensión','Alimenta la planta central desde la red: bombas, tableros, iluminación y campamento. Tiene su faja de seguridad y nada se iza debajo.')}
+{const g=new THREE.Group();g.position.set(126,0.3,75);PC.add(g);box(3,2.2,2,0x8d949a,[0,1.4,0],g,{metalness:.5});box(1.4,1.8,0.8,0x9aa0a6,[-2.5,1.2,0],g);
+ chainFence(g,[[-4.5,-3],[3,-3],[3,3],[-4.5,3],[-4.5,-3]],'subestación');hot(g,'Subestación transformadora','Baja la media tensión de la línea para los tableros de la planta. Delimitada, con acceso solo para electricistas habilitados.')}
+lbl('Línea eléctrica',[950,12,69],'','cen');lbl('Subestación',[126+660,4.5,75],'','cen');
+// matafuegos, detectores, kits y residuos que faltaban
+[[32,-19.5,'trenes'],[-30,-34,'clarificadores'],[-70,-34,'pulmón 2'],[60,24,'agua tratada'],[-30,-80,'sumidero'],[37,68.5,'laboratorio'],[52,90,'campamento'],[120,72,'subestación'],[30,-60,'lodos']].forEach(([x,z,n])=>extinguisher(PC,x,z,n));
+gasDetector(PC,-36,18,'trenes');gasDetector(PC,-112,-10,'pulmón 2');spillKit(PC,62,-18);spillKit(PC,-30,-60);bins(PC,-30,-27.5,0);bins(PC,44,76,0);
+windsock(PC,40,-28,'trenes');eyewash(PC,30,-28);
+
 
 // operador caminando por un recorrido cerrado
 function walker(pts,speed,col=0x2b5fa8,par=scene,mode){const g=new THREE.Group();par.add(g);
@@ -456,7 +585,7 @@ function walker(pts,speed,col=0x2b5fa8,par=scene,mode){const g=new THREE.Group()
  const cv=new THREE.CatmullRomCurve3(pts.map(p=>v3(p[0],0.3,p[1])),true,'catmullrom',0.05);const L=cv.getLength();let u=Math.random();const P=v3(),T=v3();
  MOVERS.push({mode,upd(dt,tt){u=(u+speed*dt/L)%1;cv.getPointAt(u,P);cv.getTangentAt(u,T);g.position.copy(P);g.rotation.y=Math.atan2(T.x,T.z);const s=Math.sin(tt*7)*0.5;lL.rotation.x=s;lR.rotation.x=-s;aL.rotation.x=-s*0.8;aR.rotation.x=s*0.8},g});return g}
 walker([[-20,-21.5],[1,-21.5],[1,5.5],[-20,5.5]],1.1);                 // recorrida de piletas
-walker([[-55,5],[-28,5],[-28,6.5],[-55,6.5]],0.9,0x2b5fa8);            // well testing
+walker([[-55,-5.3],[-36,-5.3],[-36,-6.3],[-55,-6.3]],0.9,0x2b5fa8);            // well testing
 walker([[13,-12.5],[13,-3.5],[13.6,-3.5],[13.6,-12.5]],0.7,0x2b5fa8);   // bombeo de transferencia
 walker([[52,28.4],[76,28.4],[76,29.4],[52,29.4]],0.8,0xeeeeee,MOV);          // laboratorio ↔ tanques
 walker([[18,-15],[76,-15],[76,-16.2],[18,-16.2]],1.0,0x2b5fa8,MOV);      // trenes de tratamiento
@@ -495,12 +624,13 @@ const gasMat=new THREE.MeshBasicMaterial({color:0xb8c0c6,transparent:true,opacit
 // ---------------- recorrido ----------------
 const S_COMMON=[
  {t:'Pozos',k:'raw',d:'Después de la fractura se abren los pozos para el flowback, a través del desander y el choke. Vuelve parte del agua inyectada, casi toda en las primeras semanas y las 24 horas del día.',c:[WELLX,2,0],e:[WELLX+30,26,48]},
- {t:'Desander',k:'raw',d:'Retiene la arena antes de que llegue al choke y lo erosione. La arena se descarga y se gestiona como residuo.',c:[-58,2,0],e:[-44,14,22]},
- {t:'Choke manifold',k:'raw',d:'Estrangula el flujo para controlar presión y caudal de cada pozo. Dos ramas permiten cambiar el orificio sin cortar el flowback.',c:[-48,1.5,0],e:[-38,10,16]},
- {t:'Separador trifásico',k:'raw',d:'Entra cuando el pozo empieza a dar hidrocarburo. Separa gas, petróleo y agua: el agua va a las piletas; el petróleo, a la línea de producción; el gas, a la antorcha o a la línea de gas.',c:[-33,2.5,0],e:[-18,16,26]},
+{t:'Válvula de cierre de emergencia (SDV)',k:'raw',d:'Primera barrera después del colector: válvula con actuador neumático comandada por el panel ESD. Cierra sola ante alta o baja presión, o con los pulsadores de pánico.',c:[-66.8,1.5,0],e:[-60,9,12]},
+ {t:'Desarenador',k:'raw',d:'Desarenador ciclónico: retiene la arena antes del choke para que no lo erosione. Las purgas van a la pileta de sólidos, donde la zaranda separa y pesa la arena y la descarga al contenedor; es residuo especial y sale con manifiesto. Las purgas se pueden automatizar desde la sala de control.',c:[-57,3,5],e:[-40,16,26]},
+ {t:'Choke manifold',k:'raw',d:'Estrangula el flujo para controlar presión y caudal de cada pozo. Dos ramas permiten cambiar el orificio sin cortar el flowback.',c:[-46.5,1.5,0],e:[-38,10,14]},
+ {t:'Separador trifásico',k:'raw',d:'Entra cuando el pozo empieza a dar hidrocarburo. Separa gas, petróleo y agua: el agua va a las piletas; el petróleo, a la línea de producción; el gas, a la antorcha o a la línea de gas.',c:[-31,2.5,0],e:[-18,16,24]},
  {t:'Antorcha',k:'',d:'Con el pozo ya dando gas, el gas del separador se quema lejos de pozos y equipos, dentro de un terraplén, hasta que se conecta a la línea de gas. En pozos de gas el volumen es mayor: se quema o se manda a la línea; el venteo directo queda para la etapa inicial y emergencias.',c:[FL[0],8,FL[1]],e:[FL[0]+34,26,FL[1]+40]},
  {t:'Producción a USP / EPF',k:'',d:'El petróleo separado no se almacena en la locación: va por la línea de producción a la planta separadora (USP o EPF), y el gas también cuando hay línea.',c:[-30,1,40],e:[-10,30,90]},
- {t:'Piletas',k:'raw',d:'Reciben el agua separada, dentro de un recinto de contención. Se llenan rápido si no se bombea: hay que sacar el agua sin parar.',c:[-10,2,-8],e:[8,20,22]},
+ {t:'Piletas',k:'raw',d:'Reciben el agua separada, dentro de un recinto de contención, y hay que sacarla sin parar. La arena fina que pasa el desander decanta en el fondo: se retira con camión de vacío a un volquete y sale como residuo especial.',c:[-10,2,-8],e:[8,20,22]},
  {t:'Bombeo de transferencia',k:'raw',d:'Dos motobombas sobre recinto de contención, A en marcha y B de backup, con derivadores, válvulas y cisterna de gasoil. Toman de las piletas y mandan al tratamiento.',c:[7,1,-8],e:[18,11,10]},
 ];
 const S_MOV=[
