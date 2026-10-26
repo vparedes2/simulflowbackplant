@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Flowback 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#0a1016;--glass:rgba(11,18,25,.86);--line:#22323f;--fg:#e6edf2;--muted:#8fa2b1;--raw:#d07a3a;--tre:#41b8ea;--warn:#f2b33d;--ok:#4fd18b;
+ --f-display:"Barlow Condensed","Arial Narrow",sans-serif;--f-body:"IBM Plex Sans",system-ui,sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+html,body{height:100%;margin:0}body{background:var(--bg);color:var(--fg);font-family:var(--f-body);overflow:hidden}
+#app{position:relative;height:100%}
+#stage{position:absolute;inset:0}#gl{display:block;width:100%;height:100%}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;transform:translate(-50%,-100%);font:600 12px var(--f-display);letter-spacing:.05em;color:#fff;background:rgba(10,16,22,.8);border:1px solid #2c3d4a;border-radius:4px;padding:0 6px;white-space:nowrap}
+.lbl.raw{border-color:var(--raw)}.lbl.tre{border-color:var(--tre)}.lbl.on{background:#0f2a3a;border-color:#fff;font-size:13px}
+.glass{background:var(--glass);border:1px solid var(--line);border-radius:10px;backdrop-filter:blur(6px)}
+.top{position:absolute;top:12px;left:16px;right:376px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;pointer-events:none;z-index:3}
+.top>*{pointer-events:auto}
+.title{padding:9px 13px}.title h1{margin:0;font:700 23px/1.05 var(--f-display);letter-spacing:.03em;text-transform:uppercase}.title p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.seg{display:flex;padding:4px;gap:2px}
+.seg button,.btn{font:500 13px var(--f-body);color:var(--fg);background:transparent;border:1px solid transparent;border-radius:6px;padding:6px 10px;cursor:pointer}
+.btn{border-color:var(--line)}
+.seg button[aria-pressed="true"]{background:#163142;border-color:#2c5873}
+.seg button:hover,.btn:hover{border-color:var(--tre)}
+button:focus-visible{outline:2px solid var(--tre);outline-offset:2px}
+.side{position:absolute;top:12px;right:16px;bottom:12px;width:344px;padding:12px;overflow-y:auto;display:grid;align-content:start;gap:10px;z-index:3;box-sizing:border-box}
+.side h2{margin:0;font:600 14px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.steps{display:grid;gap:4px;counter-reset:s}
+.steps button{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;text-align:left;font:500 12.5px var(--f-body);color:var(--fg);background:transparent;border:1px solid var(--line);border-radius:7px;padding:5px 8px;cursor:pointer}
+.steps button i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:600 11px var(--f-mono);font-style:normal;background:#1a2632}
+.steps button small{font:400 10.5px var(--f-mono);color:var(--muted)}
+.steps button[aria-current="true"]{border-color:#fff;background:#122230}
+.steps button.raw i{background:#5a3214}.steps button.tre i{background:#123a52}
+.dist{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;display:grid;gap:4px}
+.dist b{font:600 18px var(--f-mono)}.dist span{color:var(--muted);font-size:11.5px}
+.foot{position:absolute;left:16px;right:376px;bottom:12px;padding:12px 14px;z-index:3;display:grid;gap:6px}
+.foot h3{margin:0;font:700 21px var(--f-display);letter-spacing:.03em}.foot h3 small{font:500 12px var(--f-mono);color:var(--muted);margin-left:8px}
+.foot p{margin:0;font-size:13.5px;color:#c6d3dc;max-width:85ch}
+.kv{display:none;flex-wrap:wrap;gap:6px}.kv div{border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:11px;color:var(--muted)}.kv b{display:block;font:500 14px var(--f-mono);color:var(--fg)}
+.ctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.legend{display:flex;gap:12px;font-size:11.5px;color:var(--muted);align-items:center}.legend i{display:inline-block;width:18px;height:5px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.note{font-size:11px;color:var(--muted);margin:0}
+.credit{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.credit>div{flex:1;min-width:0}.credit .cl{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.credit b{display:block;font:600 15px var(--f-display);letter-spacing:.03em}.credit small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.cbtn{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.cbtn a{font:500 11.5px var(--f-body);color:#7fe0a5;text-decoration:none;border:1px solid #2f7d4f;border-radius:6px;padding:3px 8px}
+#tip{position:absolute;z-index:6;pointer-events:none;max-width:260px;background:rgba(10,16,22,.94);border:1px solid var(--tre);border-radius:8px;padding:6px 9px;font-size:12.5px;line-height:1.35;transform:translate(12px,12px)}
+#tip b{display:block;font:600 14px var(--f-display);letter-spacing:.03em}
+@media (max-width:860px){
+ body{overflow:auto}#app{height:auto;display:flex;flex-direction:column}
+ #stage{position:relative;height:60svh;min-height:330px}
+ .top{right:16px;left:8px;top:8px;gap:6px}.title p{display:none}.title h1{font-size:17px}
+ .seg button{font-size:12px;padding:5px 7px}
+ .foot,.side{position:static;width:auto;margin:10px 16px 0}.side{margin-bottom:16px;order:3}.foot{order:2}
+ .lbl{font-size:10.5px}
+}
+
+#opp{position:fixed;inset:0;z-index:50;color:#eef3f6;pointer-events:none}
+#opp[hidden]{display:none}
+#opp .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,12,17,.97) 0%,rgba(7,12,17,.93) 46%,rgba(7,12,17,.35) 64%,rgba(7,12,17,0) 78%),linear-gradient(0deg,rgba(7,12,17,.85) 0%,rgba(7,12,17,0) 22%)}
+#opp .tb{position:absolute;top:clamp(12px,2vh,24px);right:clamp(12px,2vw,28px);display:flex;gap:8px;pointer-events:auto}
+#opp .btn{background:rgba(10,16,22,.75)}
+#opp .kick{position:absolute;top:clamp(14px,2.4vh,30px);left:clamp(18px,4vw,72px);font:600 clamp(12px,1vw,16px) var(--f-display);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+#opp .kick b{color:var(--raw)}
+#opp .page{position:absolute;left:clamp(18px,4vw,72px);top:clamp(52px,9vh,110px);bottom:clamp(86px,12vh,130px);width:min(54vw,880px);display:flex;flex-direction:column;justify-content:safe center;gap:clamp(10px,1.6vh,22px);pointer-events:auto;overflow:auto;scrollbar-width:none;animation:oin .5s ease}
+@keyframes oin{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+#opp .hd{display:flex;align-items:center;gap:clamp(12px,1.4vw,24px)}
+#opp .ic{flex:none;width:clamp(64px,6vw,108px);height:clamp(64px,6vw,108px);border-radius:22%;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,transparent);border:2px solid var(--c)}
+#opp .ic svg{width:62%;height:62%;stroke:var(--c);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#opp .num{font:700 clamp(14px,1.2vw,20px) var(--f-mono);color:var(--c);letter-spacing:.1em}
+#opp h2{margin:2px 0 0;font:700 clamp(34px,4.2vw,74px)/0.98 var(--f-display);letter-spacing:.01em;text-transform:uppercase}
+#opp .lead{margin:0;font-size:clamp(15px,1.25vw,22px);line-height:1.4;color:#c9d5dd;max-width:60ch}
+#opp .cols{display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(12px,1.6vw,30px)}
+#opp h3{margin:0 0 8px;font:600 clamp(14px,1.05vw,18px) var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--c)}
+#opp ul.op{list-style:none;margin:0;padding:0;display:grid;gap:clamp(6px,0.8vh,10px)}
+#opp ul.op li{position:relative;padding-left:1.5em;font-size:clamp(15px,1.15vw,21px);line-height:1.32}
+#opp ul.op li::before{content:"";position:absolute;left:0;top:.42em;width:.7em;height:.7em;border-radius:3px;background:var(--c)}
+#opp .sk{display:flex;flex-wrap:wrap;gap:clamp(6px,0.6vw,10px);align-content:flex-start}
+#opp .sk span{font:500 clamp(13px,0.95vw,17px) var(--f-body);padding:.35em .75em;border-radius:999px;border:1px solid color-mix(in srgb,var(--c) 60%,transparent);background:color-mix(in srgb,var(--c) 12%,rgba(10,16,22,.6))}
+#opp nav{position:absolute;left:0;right:0;bottom:clamp(14px,2.6vh,32px);display:flex;justify-content:center;align-items:center;gap:clamp(10px,1.4vw,22px);pointer-events:auto}
+#opp nav .nb{font:600 clamp(14px,1.1vw,19px) var(--f-body);color:#fff;background:rgba(10,16,22,.8);border:1px solid #3a4b58;border-radius:999px;padding:.6em 1.3em;cursor:pointer}
+#opp nav .nb:hover{border-color:#fff}#opp nav .nb:disabled{opacity:.35;cursor:default}
+#opp nav .dots{display:flex;gap:8px}#opp nav .dots button{width:12px;height:12px;border-radius:50%;border:0;background:#3a4b58;cursor:pointer;padding:0}
+#opp nav .dots button[aria-current="true"]{background:var(--c);transform:scale(1.35)}
+#opp .ft{position:absolute;right:clamp(18px,3vw,48px);bottom:clamp(70px,10vh,110px);font-size:clamp(11px,.85vw,14px);color:#c9d5dd;text-align:right;text-shadow:0 1px 3px #000}
+body.opp-on .top,body.opp-on .side,body.opp-on .foot,body.opp-on #labels,body.opp-on #tip{visibility:hidden}
+@media (max-width:860px){#opp .kick{display:none}#opp{position:fixed}#opp .shade{background:rgba(7,12,17,.9)}#opp .page{width:auto;right:16px;left:16px}#opp .cols{grid-template-columns:1fr}#opp .ft{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+ <div id="stage"><canvas id="gl" aria-label="Vista de drone de una locación con equipo de well testing y tratamiento de flowback"></canvas><div id="labels"></div><div id="tip" hidden></div>
+  <div class="top">
+   <div class="title glass"><h1>Flowback 3D · del pozo al reúso</h1><p>Well testing, piletas y tratamiento en el pad o en planta central · Lic. Víctor Javier Paredes · <i>Water Transfer en Vaca Muerta</i></p></div>
+   <div class="seg glass" role="group" aria-label="Dónde se trata"><button id="m-mov" aria-pressed="true">Planta modular en el pad</button><button id="m-cen" aria-pressed="false">Planta central del bloque</button></div>
+   <div class="seg glass"><button id="v-all">Vista general</button><button id="play">▶ Recorrido</button><button id="oppBtn">★ Oportunidades PyMEs</button></div>
+  </div>
+ </div>
+ <section class="foot glass" aria-live="polite">
+  <h3 id="st-t">Vista general</h3>
+  <p id="st-d"></p>
+  <div class="kv" id="st-kv"></div>
+  <div class="ctl"><button class="btn" id="prev">◀ Anterior</button><button class="btn" id="next">Siguiente ▶</button>
+   <span class="legend"><span><i style="background:var(--raw)"></i>agua de retorno cruda</span><span><i style="background:var(--tre)"></i>agua tratada</span><span><i style="background:#9aa3aa"></i>gas a antorcha</span></span></div>
+ </section>
+ <aside class="side glass" aria-label="Recorrido">
+  <h2>Recorrido de una gota de retorno</h2>
+  <div class="steps" id="steps"></div>
+  <h2>Ubicación de la planta</h2>
+  <div class="dist" id="dist"></div>
+  <p class="note">Escena ilustrativa basada en la charla «Water Transfer y Flowback en Vaca Muerta». En modo planta central la distancia está comprimida.</p>
+  <div class="credit"><div><span class="cl">Autor · contacto</span><b>Lic. Víctor Javier Paredes</b><small>HSE · Water transfer · Autor de “Water Transfer en Vaca Muerta”</small>
+   <div class="cbtn"><a href="https://wa.me/5492994603071?text=Hola%20V%C3%ADctor%2C%20vi%20la%20simulaci%C3%B3n%203D%20de%20flowback%20y%20quiero%20consultarte." target="_blank" rel="noopener">WhatsApp</a></div></div></div>
+ </aside>
+</div>
+<section id="opp" hidden aria-label="Oportunidades para PyMEs neuquinas"><div class="shade"></div>
+ <div class="kick">Flowback y reúso · <b>oportunidades para PyMEs neuquinas</b></div>
+ <div class="tb"><button class="btn" id="opp-fs">⛶ Pantalla completa</button><button class="btn" id="opp-x">✕ Cerrar</button></div>
+ <div class="page"></div>
+ <div class="ft">Lic. Víctor Javier Paredes · <i>Water Transfer en Vaca Muerta</i><br>Para entrar: primero a la contratista, con documentación, ART y procedimientos al día.</div>
+ <nav><button class="nb" id="o-prev">◀ Anterior</button><div class="dots"></div><button class="nb" id="o-next">Siguiente ▶</button></nav>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const canvas=$('gl');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=0.82;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xbcd3e6);scene.fog=new THREE.Fog(0xcfd9df,500,1600);
+const camera=new THREE.PerspectiveCamera(42,1,0.5,4000);
+const controls=new THREE.OrbitControls(camera,canvas);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.47;controls.minDistance=8;controls.maxDistance=1300;
+scene.add(new THREE.HemisphereLight(0xdfeaf5,0x8a7350,0.75));
+const sun=new THREE.DirectionalLight(0xfff1dc,1.6);sun.position.set(-160,240,120);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-160,right:160,top:160,bottom:-160,near:10,far:800});scene.add(sun);scene.add(sun.target);
+const v3=(x,y,z)=>new THREE.Vector3(x,y,z);
+const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.6,metalness:.15},o));
+function add(m,p,parent=scene){if(p)m.position.set(...p);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+const box=(w,h,d,c,p,par,o)=>add(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c,o)),p,par);
+function cyl(r,h,c,p,par,axis,o,seg=24){const m=add(new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),M(c,o)),p,par);if(axis==='x')m.rotation.z=Math.PI/2;if(axis==='z')m.rotation.x=Math.PI/2;return m}
+function pipe(pts,r,c,par=scene,o){const cv=new THREE.CatmullRomCurve3(pts.map(p=>v3(...p)),false,'catmullrom',0.01);const m=new THREE.Mesh(new THREE.TubeGeometry(cv,Math.max(8,pts.length*10),r,8),M(c,Object.assign({roughness:.5,metalness:.4},o)));m.castShadow=true;par.add(m);return m}
+function poly(pts,r,c,par=scene,o){ // tramos rectos con codos (cañería rígida)
+ const g=new THREE.Group();par.add(g);for(let i=0;i<pts.length-1;i++){const a=v3(...pts[i]),b=v3(...pts[i+1]);const L=a.distanceTo(b);const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,L,10),M(c,Object.assign({roughness:.45,metalness:.5},o)));m.position.copy(a).lerp(b,.5);m.quaternion.setFromUnitVectors(v3(0,1,0),b.clone().sub(a).normalize());m.castShadow=true;g.add(m);
+  if(i>0){const s=new THREE.Mesh(new THREE.SphereGeometry(r*1.15,10,8),M(c,{metalness:.5}));s.position.copy(a);g.add(s)}}return g}
+function labelTex(txt,bg,fg,w=512,h=128){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,w,h);x.fillStyle=fg;x.font='bold '+Math.round(h*0.42)+'px Arial';x.textAlign='center';x.textBaseline='middle';x.fillText(txt,w/2,h/2);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t}
+
+// ---------------- terreno ----------------
+const gc=document.createElement('canvas');gc.width=gc.height=512;{const x=gc.getContext('2d');x.fillStyle='#86664a';x.fillRect(0,0,512,512);for(let i=0;i<9000;i++){const r=Math.random();x.fillStyle=r<.3?'#74583d':r<.55?'#9a7a58':r<.75?'#8d8070':'#634a33';x.fillRect(Math.random()*512,Math.random()*512,2,2)}
+ for(let i=0;i<1100;i++){const cx=Math.random()*512,cy=Math.random()*512,R=4+Math.random()*7;const h=36+Math.random()*10,l=48+Math.random()*16;x.strokeStyle=`hsl(${h},55%,${l}%)`;x.lineWidth=1.2;for(let k=0;k<14;k++){const a=Math.random()*Math.PI*2,rr=R*(0.6+Math.random()*0.6);x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);x.stroke()}x.fillStyle=`hsla(${h},40%,${l-18}%,.8)`;x.beginPath();x.arc(cx,cy,R*0.35,0,6.3);x.fill()}
+ for(let i=0;i<140;i++){const cx=Math.random()*512,cy=Math.random()*512,R=6+Math.random()*8;x.fillStyle=`hsl(${70+Math.random()*30},18%,${24+Math.random()*8}%)`;x.beginPath();x.arc(cx,cy,R,0,6.3);x.fill()}}
+const gTex=new THREE.CanvasTexture(gc);gTex.wrapS=gTex.wrapT=THREE.RepeatWrapping;gTex.repeat.set(120,60);gTex.encoding=THREE.sRGBEncoding;
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(2600,1300,1,1),M(0xffffff,{map:gTex,roughness:1,metalness:0}));ground.rotation.x=-Math.PI/2;ground.position.set(320,0,0);ground.receiveShadow=true;scene.add(ground);
+// bardas al fondo
+{const g=new THREE.PlaneGeometry(2600,240,160,12);const p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);const t=(y+120)/240;p.setZ(i,Math.max(0,t*t)*70*(0.7+0.3*Math.sin(x*0.013)+0.15*Math.sin(x*0.051)))}g.computeVertexNormals();
+ const m=new THREE.Mesh(g,M(0x9a7458,{roughness:1,metalness:0}));m.rotation.x=-Math.PI/2;m.position.set(320,0,-640);scene.add(m)}
+// estepa patagónica: matas de coirón (pasto amarillo) y arbustos bajos (jarilla, neneo)
+{const clear=(x,z)=>(x>-125&&x<155&&z>-85&&z<85)||(x>520&&x<800&&z>-120&&z<120)||(Math.abs(z-62)<12&&x>100&&x<1220)||(Math.abs(z-52)<8&&x>100&&x<560)||(Math.abs(x+30)<5&&z>80)||(Math.abs(z+90)<6&&x>780);
+ const merge=list=>{let n=0;list.forEach(g=>n+=g.attributes.position.count);const pos=new Float32Array(n*3),nor=new Float32Array(n*3);let o=0;list.forEach(g=>{pos.set(g.attributes.position.array,o*3);nor.set(g.attributes.normal.array,o*3);o+=g.attributes.position.count});const r=new THREE.BufferGeometry();r.setAttribute('position',new THREE.BufferAttribute(pos,3));r.setAttribute('normal',new THREE.BufferAttribute(nor,3));return r};
+ const blades=[];for(let i=0;i<10;i++){const a=i/10*Math.PI*2,t=0.25+0.35*((i*7)%5)/5;const c=new THREE.ConeGeometry(0.06,0.8+0.25*((i*3)%4)/3,3,1).toNonIndexed();c.translate(0,0.4,0);c.rotateZ(t);c.rotateY(a);c.translate(Math.cos(a)*0.06,0,Math.sin(a)*0.06);blades.push(c)}
+ const coiron=merge(blades);coiron.computeVertexNormals();
+ const place=(geo,mat,N,yo,smin,smax,sy,X0=-500,XW=1700,Z0=-560,ZW=1120)=>{const im=new THREE.InstancedMesh(geo,mat,N);const d=new THREE.Object3D();let k=0;const col=new THREE.Color();
+  while(k<N){const x=X0+Math.random()*XW,z=Z0+Math.random()*ZW;if(clear(x,z))continue;d.position.set(x,yo,z);const s=smin+Math.random()*(smax-smin);d.scale.set(s,s*sy,s);d.rotation.set(0,Math.random()*6,0);d.updateMatrix();im.setMatrixAt(k,d.matrix);
+   col.setHSL(0.1+Math.random()*0.035,0.5+Math.random()*0.2,0.48+Math.random()*0.14);im.setColorAt(k,col);k++}im.castShadow=true;scene.add(im);return im};
+ const cm=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,metalness:0,side:THREE.DoubleSide});place(coiron,cm,20000,0.02,1.0,1.9,0.8,-380,1180,-330,660);place(coiron,cm,6000,0.02,1.2,2.2,0.8);
+ const sh=new THREE.IcosahedronGeometry(1,1);{const p=sh.attributes.position;for(let i=0;i<p.count;i++){const n=0.8+0.35*Math.sin(p.getX(i)*7+p.getZ(i)*5);p.setXYZ(i,p.getX(i)*n,p.getY(i)*n,p.getZ(i)*n)}sh.computeVertexNormals()}
+ const im2=place(sh,new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,metalness:0}),2600,0.3,0.6,1.5,0.6,-420,1250,-380,760);
+ {const col=new THREE.Color();for(let i=0;i<2600;i++){col.setHSL(0.16+Math.random()*0.08,0.2+Math.random()*0.12,0.22+Math.random()*0.08);im2.setColorAt(i,col)}}}
+// locación (pad) de ripio
+const padMat=M(0xbfae8a,{roughness:1,metalness:0});
+const pad=new THREE.Mesh(new THREE.BoxGeometry(270,0.3,160),padMat);pad.position.set(15,0.15,0);pad.receiveShadow=true;scene.add(pad);
+// camino de acceso: del pad hacia el este (y a la planta central)
+const road=new THREE.Mesh(new THREE.BoxGeometry(1050,0.2,8),M(0xcbb994,{roughness:1}));road.position.set(675,0.1,62);road.receiveShadow=true;scene.add(road);
+
+
+// ---------------- hotspots / etiquetas ----------------
+const labels=$('labels');const LBL=[];
+function lbl(txt,p,cls,mode){const e=document.createElement('div');e.className='lbl '+(cls||'');e.textContent=txt;labels.appendChild(e);const o={e,p:v3(...p),mode};LBL.push(o);return o}
+const HOT=[];function hot(obj,title,txt){obj.traverse(o=>{if(o.isMesh){o.userData.tip=[title,txt]}});HOT.push(obj)}
+
+// ---------------- pozos y árboles de fractura ----------------
+const WELLX=-88,WELLZ=[-25,-15,-5,5,15,25];
+const wells=new THREE.Group();scene.add(wells);
+WELLZ.forEach((z,i)=>{const g=new THREE.Group();g.position.set(WELLX,0.3,z);wells.add(g);
+ box(3.2,0.2,3.2,0x8b8f93,[0,0.1,0],g);                // platina / contrapozo tapado
+ cyl(0.55,0.6,0x1f7a80,[0,0.5,0],g);                    // cabezal
+ for(let k=0;k<4;k++){cyl(0.42,0.5,0x1f7a80,[0,1.05+k*0.55,0],g);cyl(0.62,0.1,0x186268,[0,0.8+k*0.55,0],g);if(k%2===0){const w=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.04,6,20),M(0xc81e1e));w.rotation.y=Math.PI/2;w.position.set(-0.75,1.05+k*0.55,0);g.add(w);cyl(0.04,0.35,0x777,[-0.55,1.05+k*0.55,0],g,'x')}} // válvulas maestras con volante
+ box(0.5,0.5,1.6,0x1f7a80,[0,2.5,0],g);                 // cruz de flujo
+ [-0.95,0.95].forEach(s=>{const h=cyl(0.28,0.12,0x111111,[0,2.5,s],g,'z');})
+ cyl(0.35,0.7,0x1f7a80,[0,3.1,0],g);cyl(0.5,0.12,0x186268,[0,3.5,0],g);const wt=new THREE.Mesh(new THREE.TorusGeometry(0.4,0.04,6,20),M(0xc81e1e));wt.rotation.x=Math.PI/2;wt.position.set(0,3.75,0);g.add(wt);
+ // línea de flowback (hierro de alta presión) del ala hacia el colector
+ g.userData.line=[[0,2.5,0.95],[0,2.5,1.6],[0,0.6,1.6],[18,0.6,1.6],[18,0.6,0]];
+});
+hot(wells,'Pozos del pad','Seis pozos con su árbol. Después de la fractura se abren de a uno o en grupo para el flowback: devuelven arena, gas, algo de crudo y gran parte del agua inyectada.');
+lbl('Pozos (6)',[WELLX,6,-30],'raw');
+// colector de flowback
+const HX=-70;
+WELLZ.forEach(z=>{cyl(0.22,0.4,0x1f3e70,[HX,1.25,z+1.6])});
+
+lbl('Colector',[HX,3,-4],'raw');
+
+// ---------------- utilidades de equipos ----------------
+const panelC=document.createElement('canvas');panelC.width=256;panelC.height=64;{const x=panelC.getContext('2d');x.fillStyle='#9aa0a4';x.fillRect(0,0,256,64);for(let i=0;i<256;i+=32){x.fillStyle='#7d8387';x.fillRect(i,0,3,64)}x.fillStyle='#868c90';x.fillRect(0,30,256,3)}
+const panelTex=new THREE.CanvasTexture(panelC);panelTex.wrapS=THREE.RepeatWrapping;panelTex.repeat.set(16,1);const plateC=document.createElement('canvas');plateC.width=64;plateC.height=64;{const x=plateC.getContext('2d');x.fillStyle='#9aa0a4';x.fillRect(0,0,64,64);x.fillStyle='#7d8387';x.fillRect(0,0,3,64);x.fillStyle='#868c90';x.fillRect(0,30,64,3)}
+const seg=(a,b,r,c,par)=>{const A=v3(...a),B=v3(...b);const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,A.distanceTo(B),8),M(c,{metalness:.4}));m.position.copy(A).lerp(B,.5);m.quaternion.setFromUnitVectors(v3(0,1,0),B.clone().sub(A).normalize());m.castShadow=true;par.add(m);return m};
+const LIQ=0x1b1d1f;
+function contain(par,x,z,w,d,name){ // recinto de contención: geomembrana + bordo perimetral
+ const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);const mem=new THREE.Mesh(new THREE.PlaneGeometry(w,d),M(LIQ,{roughness:.9,metalness:0}));mem.rotation.x=-Math.PI/2;mem.position.y=0.03;mem.receiveShadow=true;g.add(mem);
+ [[w,0.35,0.4,0,w/2*0,d/2],[w,0.35,0.4,0,0,-d/2],[0.4,0.35,d,w/2,0,0],[0.4,0.35,d,-w/2,0,0]].forEach(a=>{const b=box(a[0],a[1],a[2],0x2a2c2e,[a[3],0.18,a[5]],g);if(a[3]===0)b.position.x=0});
+ hot(g,'Recinto de contención'+(name?' · '+name:''),'Geomembrana con bordo perimetral bajo todo equipo que recibe flowback: contiene derrames de agua salada, arena o hidrocarburo.');return g}
+function ringBerm(par,x,z,R,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);const mem=new THREE.Mesh(new THREE.CircleGeometry(R,48),M(LIQ,{roughness:.9,metalness:0}));mem.rotation.x=-Math.PI/2;mem.position.y=0.03;g.add(mem);
+ const b=new THREE.Mesh(new THREE.TorusGeometry(R,0.3,6,64),M(0x2a2c2e,{roughness:.9}));b.rotation.x=Math.PI/2;b.scale.z=0.9;b.position.y=0.1;g.add(b);
+ hot(g,'Recinto de contención'+(name?' · '+name:''),'Geomembrana y bordo alrededor del tanque: si la lona pierde, el agua queda contenida.');return g}
+function stair(par,x,z,ang,h){ // escalera de inspección: torre con plataforma y escalera inclinada con barandas a ambos lados
+ const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=ang;par.add(g);const C=0xf08a1c,P=h+0.15,run=h*1.15,X0=1.2;
+ [[0.05,-0.6],[0.05,0.6],[X0,-0.6],[X0,0.6]].forEach(([a,b])=>seg([a,0,b],[a,P+1.0,b],0.045,C,g));
+ box(X0+0.1,0.06,1.3,C,[X0/2+0.02,P,0],g);
+ [[0.05,-0.6,X0,-0.6],[0.05,0.6,X0,0.6],[0.05,-0.6,0.05,0.6]].forEach(([a,b,c,d])=>{seg([a,P+1.0,b],[c,P+1.0,d],0.03,C,g);seg([a,P+0.5,b],[c,P+0.5,d],0.025,C,g)});
+ [-0.45,0.45].forEach(zz=>{seg([X0,P,zz],[X0+run,0.05,zz],0.05,C,g);seg([X0,P+1.0,zz*1.15],[X0+run,1.0,zz*1.15],0.03,C,g);
+  [0,0.5,1].forEach(t=>seg([X0+run*t,P*(1-t)+0.05*t,zz*1.15],[X0+run*t,P*(1-t)+0.05*t+1.0,zz*1.15],0.025,C,g))});
+ const n=Math.round(P/0.22);for(let i=1;i<n;i++){const t=i/n;box(0.25,0.04,0.9,C,[X0+run*t,P*(1-t),0],g)}
+ hot(g,'Escalera de inspección','Torre con plataforma y escalera con barandas a ambos lados para revisar nivel y lona desde arriba.');return g}
+function austTank(x,z,nP,h,water,par,stairAng,name){const r=6*nP/(2*Math.PI);const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);
+ const ring=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,72,1,true),M(0xffffff,{map:(()=>{const t=new THREE.CanvasTexture(plateC);t.wrapS=THREE.RepeatWrapping;t.repeat.set(nP,1);return t})(),metalness:.4,roughness:.55,side:THREE.DoubleSide}));ring.position.y=h/2;ring.castShadow=true;ring.receiveShadow=true;g.add(ring);
+ const lip=new THREE.Mesh(new THREE.TorusGeometry(r+0.05,0.15,8,72),M(0x121314));lip.rotation.x=Math.PI/2;lip.position.y=h;g.add(lip);
+ const w=new THREE.Mesh(new THREE.CircleGeometry(r*0.985,48),M(water,{roughness:.08,metalness:.3}));w.rotation.x=-Math.PI/2;w.position.y=h*0.8;g.add(w);
+ const vol=Math.round(Math.PI*r*r*h/10)*10;g.userData.vol=vol;g.userData.r=r;
+ hot(g,name,`${(name.includes('tratada')?'Agua tratada':'Agua de retorno cruda')} · tanque australiano de placas, con escalera de inspección y recinto de contención.`);
+ ringBerm(par,x,z,r+3,name);
+ if(stairAng!=null){const dx=Math.cos(stairAng),dz=-Math.sin(stairAng);stair(par,x+dx*(r+0.05),z+dz*(r+0.05),stairAng,h)}
+ return g}
+function layflat(pts,par,name,txt,col=0x16181a){ // manguera layflat: tubo aplastado apoyado en el suelo
+ const cv=new THREE.CatmullRomCurve3(pts.map(p=>v3(p[0],0,p[1])),false,'catmullrom',0.02);const m=new THREE.Mesh(new THREE.TubeGeometry(cv,Math.max(40,pts.length*30),0.3,10),M(col,{roughness:.55,metalness:.05}));
+ m.scale.y=0.45;m.position.y=0.44;m.castShadow=true;par.add(m);if(name)hot(m,name,txt);return m}
+function valve(par,x,y,z,ry,open=true){const v=new THREE.Group();v.position.set(x,y,z);v.rotation.y=ry||0;par.add(v);const b=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.16,14),M(0x2a4fa8));b.rotation.z=Math.PI/2;v.add(b);
+ const st=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.32,6),M(0x777));st.position.y=0.24;v.add(st);const hw=new THREE.Mesh(new THREE.TorusGeometry(0.14,0.02,6,16),M(open?0x1f9a4a:0xb3261e));hw.rotation.x=Math.PI/2;hw.position.y=0.4;v.add(hw);return v}
+// estación de bombeo: dos motobombas (A en marcha, B backup) sobre recinto de contención, derivadores de succión e impulsión y cisterna de gasoil
+function pumpStation(par,x,z,ry,name){const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=ry||0;par.add(g);
+ const mem=new THREE.Mesh(new THREE.BoxGeometry(8.4,0.08,6.4),M(0x4a4e52,{roughness:.8}));mem.position.y=0.04;mem.receiveShadow=true;g.add(mem);
+ [[8.4,0.3,0.15,0,3.2],[8.4,0.3,0.15,0,-3.2],[0.15,0.3,6.4,4.2,0],[0.15,0.3,6.4,-4.2,0]].forEach(a=>box(a[0],a[1],a[2],0x3a3d40,[a[3],0.15,a[4]],g));
+ [1.4,-1.4].forEach((zz,j)=>{box(3.0,0.18,1.2,0x2a2c2e,[0,0.17,zz],g);box(1.7,0.85,0.95,0xd8c35a,[-0.4,0.7,zz],g,{roughness:.5});
+  const GR=0x55c12a;[[-1.35,0.25],[1.0,0.25]].forEach(()=>{});
+  [[-1.4,-0.55],[-1.4,0.55],[0.75,-0.55],[0.75,0.55]].forEach(([a,b])=>seg([a,0.26,zz+b],[a,1.45,zz+b],0.04,GR,g));
+  [[-1.4,-0.55,0.75,-0.55],[-1.4,0.55,0.75,0.55],[-1.4,-0.55,-1.4,0.55],[0.75,-0.55,0.75,0.55]].forEach(([a,b,c,d])=>seg([a,1.45,zz+b],[c,1.45,zz+d],0.04,GR,g));
+  cyl(0.36,0.32,0x2b4a35,[1.15,0.72,zz],g,'z',{metalness:.3});cyl(0.13,0.35,0x666b70,[0.85,0.72,zz],g,'x');
+  box(0.25,0.3,0.12,0xe9ecee,[0.1,1.15,zz+0.52],g);
+  const bea=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),new THREE.MeshBasicMaterial({color:j?0xffb020:0x3dff6a}));bea.position.set(0.3,1.55,zz);g.add(bea);
+  // succión: rama del derivador con válvula y manguera corta a la voluta
+  pipe([[-3.2,0.5,zz*0.25],[-2.6,0.55,zz],[-1.9,0.55,zz]],0.13,0x7a8086,g);valve(g,-2.3,0.55,zz,0,j===0);
+  pipe([[-1.9,0.55,zz],[-1.2,0.4,zz+(zz>0?0.85:-0.85)],[1.15,0.5,zz+(zz>0?0.85:-0.85)],[1.15,0.72,zz+(zz>0?0.2:-0.2)]],0.11,0x16181a,g);
+  // impulsión
+  pipe([[1.33,0.72,zz],[2.2,0.6,zz],[3.0,0.5,zz*0.25]],0.13,0x7a8086,g);valve(g,2.1,0.62,zz,0,j===0)});
+ cyl(0.22,0.5,0x7a8086,[-3.4,0.5,0],g,'x');cyl(0.22,0.5,0x7a8086,[3.3,0.5,0],g,'x');
+ [-3.75,3.65].forEach(xx=>{const c=new THREE.Mesh(new THREE.TorusGeometry(0.26,0.05,8,20),M(0xc94a22));c.rotation.y=Math.PI/2;c.position.set(xx,0.5,0);g.add(c)});
+ // cisterna de gasoil sobre batea, fuera del recinto de las bombas
+ box(2.6,0.35,1.6,0xf0f0ee,[0.5,0.2,-4.6],g);const ft=cyl(0.55,2.0,0xf4f4f2,[0.5,0.95,-4.6],g,'x');
+ // antena de telemetría
+ seg([-3.6,0.1,2.6],[-3.6,3.0,2.6],0.03,0xc9ced1,g);const dish=new THREE.Mesh(new THREE.SphereGeometry(0.22,16,8,0,Math.PI*2,0,Math.PI*0.35),M(0xf4f5f5,{side:THREE.DoubleSide}));dish.rotation.x=Math.PI*0.62;dish.position.set(-3.6,3.1,2.6);g.add(dish);
+ hot(g,name,'Dos motobombas sobre recinto de contención: A en marcha y B de backup, con derivador de succión y de impulsión, válvulas, cisterna de gasoil y telemetría.');
+ scene.updateMatrixWorld(true);g.userData.inP=g.localToWorld(v3(-3.72,0,0));g.userData.outP=g.localToWorld(v3(3.62,0,0));return g}
+function container(x,z,col,txt,par,len=12){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);
+ box(len,2.6,2.44,col,[0,1.6,0],g,{roughness:.55,metalness:.35});box(len+0.1,0.3,2.6,0x2a2c2e,[0,0.15,0],g);
+ for(let i=-len/2+0.6;i<len/2;i+=0.6)box(0.06,2.4,0.05,col,[i,1.6,1.24],g,{roughness:.5});
+ const t=new THREE.Mesh(new THREE.PlaneGeometry(len*0.7,0.8),new THREE.MeshBasicMaterial({map:labelTex(txt,'#ffffff','#1f3a4d',1024,128)}));t.position.set(0,2.2,1.29);g.add(t);return g}
+function truck(x,z,rot,par,col=0xdedede){const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=rot;par.add(g);
+ box(2.5,2.4,2.4,0x2b5fa8,[5.2,1.7,0],g);box(2.2,0.9,2.3,0x203040,[5.4,2.4,0],g,{metalness:.6,roughness:.2});
+ cyl(1.2,9,col,[-0.8,2.2,0],g,'x',{metalness:.6,roughness:.3});box(11.5,0.4,2.2,0x222,[0.5,0.7,0],g);
+ [[5.2,1],[5.2,-1],[0.6,1],[0.6,-1],[-2.6,1],[-2.6,-1],[-4,1],[-4,-1]].forEach(([a,b])=>cyl(0.5,0.4,0x111,[a,0.5,b*1.05],g,'z'));return g}
+function volquete(par,x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);const s=new THREE.Shape();s.moveTo(-3,0);s.lineTo(3,0);s.lineTo(3.6,1.8);s.lineTo(-3.6,1.8);
+ const b=new THREE.Mesh(new THREE.ExtrudeGeometry(s,{depth:2.2,bevelEnabled:false}),M(0xc9a227,{roughness:.6}));b.position.z=-1.1;b.castShadow=true;g.add(b);const top=new THREE.Mesh(new THREE.PlaneGeometry(7,2.1),M(0x4a3a2a,{roughness:1}));top.rotation.x=-Math.PI/2;top.position.y=1.6;g.add(top);
+ hot(g,name||'Volquete de lodos','Lodos deshidratados del tratamiento: salen como residuo especial, con manifiesto.');return g}
+function sludgeTank(par,x,z,r,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);cyl(r,2.6,0x8d949a,[0,2.2,0],g,null,{metalness:.5});const cone=new THREE.Mesh(new THREE.ConeGeometry(r,1.2,24),M(0x8d949a,{metalness:.5}));cone.rotation.x=Math.PI;cone.position.y=0.3+0.6;g.add(cone);
+ [0,2.1,4.2].forEach(a=>seg([Math.cos(a)*r*0.9,0,Math.sin(a)*r*0.9],[Math.cos(a)*r*0.9,1.0,Math.sin(a)*r*0.9],0.06,0x555,g));
+ hot(g,name,'Recibe los lodos del clarificador por cañería, los espesa y los manda al filtro prensa; el líquido vuelve a la cabecera del tratamiento.');return g}
+function filterPress(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);box(6,0.3,1.8,0x2a2c2e,[0,0.15,0],g);for(let i=-2.4;i<=2.4;i+=0.3)box(0.22,1.4,1.4,0x3f6fa0,[i,1.1,0],g);box(0.4,1.8,1.8,0x555,[-2.9,1.2,0],g);box(0.4,1.8,1.8,0x555,[2.9,1.2,0],g);
+ hot(g,'Filtro prensa','Deshidrata los lodos: la torta sólida cae al volquete y el filtrado vuelve al tratamiento.');return g}
+
+// ---------------- well testing ----------------
+const WT=new THREE.Group();scene.add(WT);
+const BLUE=0x2f6fd6,GREY=0x8d9399,YEL=0xf2c230;
+// skid de equipo: base gris con patines y topes amarillos (como los de la referencia)
+function skid(par,L,W){box(L,0.18,W,0x6d7378,[0,0.09,0],par,{metalness:.5});[-W/2+0.1,W/2-0.1].forEach(z=>{cyl(0.12,L+0.3,0x5d6368,[0,0.12,z],par,'x',{metalness:.5});[-1,1].forEach(s=>cyl(0.14,0.08,YEL,[s*(L/2+0.17),0.12,z],par,'x'))})}
+function gateV(par,x,y,z,ax){const v=new THREE.Group();v.position.set(x,y,z);par.add(v);const b=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.42,0.42),M(BLUE,{metalness:.3}));v.add(b);
+ const bon=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.16,0.5,12),M(BLUE));bon.position.y=0.45;v.add(bon);const st=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.4,6),M(0x999));st.position.y=0.85;v.add(st);
+ const hw=new THREE.Group();hw.position.y=1.05;v.add(hw);for(let i=0;i<3;i++){const sp=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.03,0.03),M(0x8f9396));sp.rotation.y=i*Math.PI/3;hw.add(sp)}
+ [-0.24,0.24].forEach(d=>{const f=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,0.06,14),M(BLUE));f.rotation.z=Math.PI/2;f.position.x=d;if(ax==='z'){f.rotation.z=0;f.rotation.x=Math.PI/2;f.position.set(0,0,d)}v.add(f)});return v}
+// válvula de cierre de emergencia (SDV) con actuador, en jaula
+function sdv(x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);WT.add(g);
+ box(1.3,0.08,1.3,GREY,[0,0.04,0],g);[[-0.6,-0.6],[0.6,-0.6],[-0.6,0.6],[0.6,0.6]].forEach(([a,b])=>seg([a,0,b],[a,2.6,b],0.05,GREY,g));
+ [[-0.6,-0.6,0.6,-0.6],[-0.6,0.6,0.6,0.6],[-0.6,-0.6,-0.6,0.6],[0.6,-0.6,0.6,0.6]].forEach(([a,b,c,d])=>{seg([a,2.6,b],[c,2.6,d],0.05,GREY,g);seg([a,0.1,b],[c,0.1,d],0.05,GREY,g)});
+ cyl(0.28,0.6,BLUE,[0,0.6,0],g);cyl(0.18,0.5,BLUE,[0,1.15,0],g);cyl(0.42,0.75,BLUE,[0,1.75,0],g);const cap=new THREE.Mesh(new THREE.SphereGeometry(0.42,14,8,0,6.3,0,Math.PI/2),M(BLUE));cap.position.y=2.12;g.add(cap);
+ cyl(0.17,1.0,BLUE,[0,0.6,0],g,'x');[-0.5,0.5].forEach(d=>cyl(0.24,0.1,BLUE,[d,0.6,0],g,'x'));
+ hot(g,name,'Válvula de cierre de emergencia con actuador neumático: el sistema ESD la cierra sola ante alta o baja presión, o con los pulsadores de pánico.');return g}
+// desarenador ciclónico en bastidor alto con plataforma, baranda y escalera
+function desander(x,z){const g=new THREE.Group();g.position.set(x,0.3,z);WT.add(g);const F=0x7f7d8c;
+ box(3.4,0.12,3.0,0x6d7378,[0,0.06,0],g,{metalness:.5});
+ seg([-1.5,0,-1.3],[-1.5,7.2,-1.3],0.13,F,g);seg([-1.5,0,1.3],[-1.5,7.2,1.3],0.13,F,g);seg([1.4,0,-1.3],[-0.4,7.6,-1.3],0.12,F,g);seg([1.4,0,1.3],[-0.4,7.6,1.3],0.12,F,g);
+ seg([-1.5,7.2,-1.3],[-1.5,7.2,1.3],0.1,F,g);seg([-1.5,3.6,-1.3],[0.5,0.2,-1.3],0.08,F,g);seg([-1.5,3.6,1.3],[0.5,0.2,1.3],0.08,F,g);
+ box(2.8,0.1,2.6,0x6d7378,[0,4.0,0],g);[[-1.4,-1.3,1.4,-1.3],[-1.4,1.3,1.4,1.3],[1.4,-1.3,1.4,1.3]].forEach(([a,b,c,d])=>{seg([a,5.0,b],[c,5.0,d],0.035,YEL,g);seg([a,4.5,b],[c,4.5,d],0.03,YEL,g)});
+ [[-1.4,-1.3],[1.4,-1.3],[-1.4,1.3],[1.4,1.3]].forEach(([a,b])=>seg([a,4.0,b],[a,5.0,b],0.035,YEL,g));
+ [-0.25,0.25].forEach(d=>seg([1.45,0.1,d+0.6],[1.45,4.0,d+0.6],0.035,YEL,g));for(let y=0.4;y<4;y+=0.35)seg([1.45,y,0.35],[1.45,y,0.85],0.025,YEL,g);
+ cyl(0.42,3.6,0xd5d8db,[0,2.1,0],g,null,{metalness:.6,roughness:.35});cyl(0.6,0.5,BLUE,[0,4.3,0],g);cyl(0.68,0.12,BLUE,[0,4.05,0],g);cyl(0.68,0.12,BLUE,[0,4.55,0],g);cyl(0.32,0.6,BLUE,[0,4.95,0],g);gateV(g,0,5.45,0);
+ cyl(0.5,0.3,BLUE,[0,0.45,0],g);[-0.75,0.75].forEach(d=>cyl(0.2,0.3,BLUE,[d,4.3,0],g,'x'));
+ seg([0.8,4.3,0],[0.9,4.3,0.9],0.08,BLUE,g);seg([0.9,4.3,0.9],[0.9,0.6,0.9],0.08,BLUE,g);
+ hot(g,'Desarenador ciclónico','Separa los sólidos del flowback por efecto ciclón antes del choke, para que la arena no lo erosione. Las purgas se pueden automatizar y operar desde la sala de control, sin exponer al operador.');return g}
+// choke manifold de doble ramal sobre skid
+function chokeManifold(x,z){const g=new THREE.Group();g.position.set(x,0.3,z);WT.add(g);skid(g,5.2,2.6);
+ [-0.7,0.7].forEach(zz=>{seg([-2.4,1.0,zz],[2.4,1.0,zz],0.11,BLUE,g);gateV(g,-1.3,1.0,zz);const cb=box(0.6,0.55,0.55,BLUE,[0.2,1.0,zz],g);gateV(g,1.4,1.0,zz);
+  [-2.0,0.2,2.0].forEach(xx=>seg([xx,0.2,zz],[xx,0.78,zz],0.05,GREY,g))});
+ seg([-2.4,1.0,-0.7],[-2.4,1.0,0.7],0.12,BLUE,g);seg([2.4,1.0,-0.7],[2.4,1.0,0.7],0.12,BLUE,g);box(0.3,0.3,0.3,BLUE,[-2.4,1.0,0],g);box(0.3,0.3,0.3,BLUE,[2.4,1.0,0],g);
+ hot(g,'Choke manifold','Doble ramal con caja porta orificio: se cambia el orificio de una rama mientras fluye por la otra, sin cerrar el pozo.');return g}
+// data header (sensores de presión y temperatura antes y después del choke)
+function dataHeader(x,z){const g=new THREE.Group();g.position.set(x,0.3,z);WT.add(g);box(1.6,0.1,0.8,GREY,[0,0.05,0],g);cyl(0.16,1.4,BLUE,[0,0.75,0],g,'x');[-0.35,0.35].forEach(d=>{seg([d,0.75,0],[d,1.3,0],0.03,0x999,g);const gg=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,0.06,16),M(0xeeeeee));gg.rotation.x=Math.PI/2;gg.position.set(d,1.4,0);g.add(gg)});
+ [-0.5,0.5].forEach(d=>seg([d,0.1,0],[d,0.6,0],0.04,GREY,g));hot(g,'Data header','Toma de presión, temperatura y muestras de fluido; transmite a la cabina de well testing.');return g}
+
+contain(scene,-52,1.9,18,10.4,'well testing');
+sdv(-66.8,0,'Válvula de cierre de emergencia (SDV)');lbl('SDV',[-66.8,4.2,-2.5],'raw');
+desander(-58,0);lbl('Desarenador',[-58,9,0],'raw');
+dataHeader(-52.3,0);chokeManifold(-46.5,0);lbl('Choke',[-46.5,3.6,0],'raw');dataHeader(-40.7,0);
+// pileta de sólidos con zaranda: recibe las purgas del desarenador y descarga la arena a contenedor
+{const g=new THREE.Group();g.position.set(-57,0.3,11.5);WT.add(g);const L=10,W=2.6,H=2.2;skid(g,L,W);
+ box(L,H,W,BLUE,[0,0.2+H/2,0],g,{roughness:.55});for(let i=-L/2+0.6;i<L/2;i+=0.9)box(0.08,H,0.05,0x5d6368,[i,0.2+H/2,W/2+0.03],g);
+ box(L,0.06,W,0xd9b82a,[0,0.25+H,0],g,{roughness:.8});[[-L/2,-W/2,L/2,-W/2],[-L/2,W/2,L/2,W/2],[-L/2,-W/2,-L/2,W/2]].forEach(([a,b,c,d])=>{seg([a,0.3+H+1.0,b],[c,0.3+H+1.0,d],0.035,YEL,g);seg([a,0.3+H+0.5,b],[c,0.3+H+0.5,d],0.03,YEL,g)});
+ for(let i=-L/2;i<=L/2;i+=1.25){seg([i,0.3+H,-W/2],[i,0.3+H+1.0,-W/2],0.03,YEL,g);seg([i,0.3+H,W/2],[i,0.3+H+1.0,W/2],0.03,YEL,g)}
+ const zr=new THREE.Group();zr.position.set(L/2-1.4,0.3+H,0);g.add(zr);box(2.2,0.7,2.0,0xe0661a,[0,0.45,0],zr);box(2.0,0.15,1.8,0x3a3d40,[0.1,0.85,0],zr);[-0.5,0.5].forEach(d=>cyl(0.22,0.4,0x2a2c2e,[-0.3,1.1,d],zr,'z'));
+ const ch=box(1.6,0.08,1.4,0xb8bec4,[1.9,0.15,0],zr,{metalness:.6});ch.rotation.z=-0.45;
+ seg([-1.6,0.6,0],[-1.6,1.9,0],0.07,0x9aa0a6,zr);seg([-1.6,1.9,0],[0.6,1.9,0],0.07,0x9aa0a6,zr);seg([0.6,1.9,0],[0.6,1.0,0],0.07,0x9aa0a6,zr);
+ hot(g,'Pileta de sólidos con zaranda','Recibe las purgas del desarenador. La zaranda separa y pesa la arena y la descarga al contenedor; el líquido queda en la pileta y va a las piletas de flowback.')}
+contain(scene,-54,11.5,19,4.6,'pileta de sólidos y contenedor');lbl('Pileta de sólidos · zaranda',[-58,5.5,11.5],'');
+volquete(scene,-47.4,11.5,'Contenedor de arena');lbl('Arena del desarenador',[-47.4,3.4,11.5],'');
+pipe([[-57.1,1.0,0.9],[-57.1,0.6,2.5],[-57.1,0.6,7],[-57.1,3.0,9.5],[-59,3.0,10.5]],0.09,0x5d6368);
+// panel ESD con pulsadores de pánico y cámaras de monitoreo
+{const g=new THREE.Group();g.position.set(-44,0.3,6);WT.add(g);box(1.2,0.1,0.8,GREY,[0,0.05,0],g);box(1.0,1.5,0.6,0xc7ccd0,[0,0.95,0],g,{metalness:.7,roughness:.25});box(0.8,0.6,0.02,0x1d2a36,[0,1.2,0.31],g,{metalness:.6,roughness:.1});
+ const pb=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),M(0xd01e1e,{emissive:0x500000}));pb.position.set(0.3,0.6,0.32);g.add(pb);
+ hot(g,'Panel ESD','Comanda la válvula de cierre de emergencia por alta o baja presión. Tiene pulsadores de pánico: uno acá y otro junto a la cabina de well testing.')}
+lbl('Panel ESD',[-44,3,6],'');
+[[-62,-4.2],[-30,8]].forEach(([x,z])=>{const g=new THREE.Group();g.position.set(x,0.3,z);scene.add(g);seg([0,0,0],[0,4.5,0],0.05,0x9aa0a6,g);box(0.35,0.22,0.22,0xf2f2f2,[0.15,4.5,0],g);cyl(0.07,0.12,0x111,[0.38,4.5,0],g,'x');hot(g,'Cámara de monitoreo','Permite ver la operación en tiempo real desde la sala de control o un dispositivo autorizado.')});
+
+// separador trifásico horizontal plateado sobre skid, con línea de gas amarilla
+contain(scene,-31,0,13,5.4,'separador');
+{const g=new THREE.Group();g.position.set(-31,0.3,0);WT.add(g);skid(g,10.5,3.0);
+ [-3.0,3.0].forEach(x=>box(0.5,1.2,1.5,0x6d7378,[x,0.85,0],g));
+ cyl(1.0,7.6,0xcfd3d7,[0,2.4,0],g,'x',{metalness:.75,roughness:.28});[-3.8,3.8].forEach(x=>{const c=new THREE.Mesh(new THREE.SphereGeometry(1.0,16,12),M(0xcfd3d7,{metalness:.75,roughness:.28}));c.scale.set(0.35,1,1);c.position.set(x,2.4,0);c.castShadow=true;g.add(c)});
+ cyl(0.45,0.5,0xcfd3d7,[-1.5,3.5,0],g,null,{metalness:.7});box(0.3,0.5,0.3,0x555,[2,3.6,0],g);
+ hot(g,'Separador trifásico','Separa gas, petróleo y agua por gravedad. El gas va a la antorcha o a la línea de gas; el petróleo, a la línea de producción hacia la USP o EPF; el agua de retorno, a las piletas.')}
+lbl('Separador trifásico',[-31,6.2,0],'raw');
+// gas a antorcha (cañería amarilla)
+const FL=[-38,-62];
+const gasL=poly([[-32.5,3.8,0],[-32.5,5.2,0],[-32.5,5.2,-3],[-32.5,0.6,-6],[-38,0.6,-12],[-38,0.6,-58]],0.12,0xe8c21a);hot(gasL,'Línea de gas a antorcha','Gas separado hacia la antorcha.');
+{const g=new THREE.Group();g.position.set(FL[0],0.3,FL[1]);scene.add(g);box(3,0.4,3,0x555a60,[0,0.2,0],g);cyl(0.35,16,0x6a6f75,[0,8.4,0],g);cyl(0.5,0.6,0x333,[0,16.6,0],g);
+ [0,2.1,4.2].forEach(a=>seg([Math.cos(a)*3,0.3,Math.sin(a)*3],[0,15,0],0.035,0x888,g));
+ const fl=new THREE.Mesh(new THREE.ConeGeometry(0.9,4,12,1,true),new THREE.MeshBasicMaterial({color:0xffa53a,transparent:true,opacity:.85}));fl.position.set(0,19,0);g.add(fl);scene.userData.flame=fl;
+ const b=new THREE.Mesh(new THREE.TorusGeometry(9,1.2,6,32),M(0xbfa77d,{roughness:1}));b.rotation.x=Math.PI/2;b.scale.z=0.6;b.position.y=0.4;g.add(b);
+ hot(g,'Antorcha','Cuando el pozo ya da gas, el gas del separador se quema acá, lejos de pozos y equipos y dentro de un terraplén, hasta que se conecta a la línea de gas.')}
+lbl('Antorcha',[FL[0],22,FL[1]],'');
+// petróleo a la línea de producción (USP / EPF)
+const prodL=poly([[-32,2.0,0.5],[-32,1.4,1.6],[-32,0.6,2.4],[-32,0.6,4],[-30,0.6,4],[-30,0.6,85],[-30,0.6,220]],0.14,0x3d6b3a);hot(prodL,'Línea de producción a USP / EPF','El petróleo separado (y el gas, cuando hay línea) va a la planta separadora: USP o EPF. No se almacena en la locación.');
+lbl('Producción a USP / EPF',[-30,3,70],'');
+
+// líneas de alta presión: funda antilátigo, eslinga de seguridad a lo largo y dados de anclaje
+const DADO=new THREE.BoxGeometry(0.7,0.55,0.7),dadoM=M(0x9a9a96,{roughness:.95});
+function sockLine(pts,r,par=scene,name){const g=poly(pts,r,0x2a5fc9,par,{metalness:.1,roughness:.8});
+ for(let i=0;i<pts.length-1;i++){const a=v3(...pts[i]),b=v3(...pts[i+1]);const L=a.distanceTo(b);const dir=b.clone().sub(a).normalize();const q=new THREE.Quaternion().setFromUnitVectors(v3(0,1,0),dir);
+  const n=Math.floor(L/1.4);for(let k=1;k<=n;k++){const p=a.clone().lerp(b,k/(n+1));const m=new THREE.Mesh(new THREE.CylinderGeometry(r*1.25,r*1.25,0.28,10),M(0xc8231e,{roughness:.7}));m.position.copy(p);m.quaternion.copy(q);g.add(m)}
+  // eslinga de seguridad (cable de retención) por encima de la línea
+  const off=v3(0,r+0.07,0);const c=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,L,6),M(0xff8a1f,{roughness:.6}));c.position.copy(a).lerp(b,.5).add(off);c.quaternion.copy(q);g.add(c);
+  // dados de seguridad de hormigón con abrazadera, en tramos a nivel del suelo
+  if(Math.abs(a.y-b.y)<0.2&&a.y<1.4){const nd=Math.floor(L/5);for(let k=1;k<=nd;k++){const p=a.clone().lerp(b,k/(nd+1));const side=v3(-dir.z,0,dir.x).multiplyScalar(r+0.5);
+   const d=new THREE.Mesh(DADO,dadoM);d.position.set(p.x+side.x,0.3+0.275,p.z+side.z);d.castShadow=true;g.add(d);
+   const s=new THREE.Mesh(new THREE.TorusGeometry(r+0.04,0.025,6,14),M(0xff8a1f));s.position.copy(p);s.quaternion.copy(q);s.rotateX(Math.PI/2);g.add(s);
+   const st=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,side.length(),6),M(0xff8a1f));st.position.set(p.x+side.x/2,p.y,p.z+side.z/2);st.quaternion.setFromUnitVectors(v3(0,1,0),side.clone().normalize());g.add(st)}}}
+ hot(g,name||'Línea de flowback','Hierro de alta presión con funda antilátigo, eslinga de seguridad a lo largo de la línea y dados de hormigón que la anclan al piso: si una unión cede, la línea no latiguea.');return g}
+wells.children.forEach(g=>{sockLine(g.userData.line.map(p=>[p[0]+WELLX,p[1]+0.3,p[2]+g.position.z]),0.09,scene,'Línea de flowback del pozo')});
+sockLine([[HX,0.9,-27],[HX,0.9,27]],0.16,scene,'Colector de flowback');sockLine([[HX,0.9,0],[-67.25,0.9,0]],0.16,scene,'Línea a la SDV');sockLine([[-66.35,0.9,0],[-60,0.9,0],[-59.2,0.75,0],[-58.45,0.75,0]],0.16,scene,'Entrada al desarenador');
+sockLine([[-57.55,0.75,0],[-55,0.75,0],[-54,1.05,0],[-52.95,1.05,0]],0.12,scene,'Línea al data header');sockLine([[-51.65,1.05,0],[-50,1.05,0],[-49.4,1.3,0],[-48.8,1.3,0]],0.12,scene,'Entrada al choke');
+sockLine([[-44.2,1.3,0],[-42.6,1.3,0],[-42,1.05,0],[-41.35,1.05,0]],0.12,scene,'Salida del choke');sockLine([[-40.05,1.05,0],[-36.3,1.05,0],[-36.3,2.7,0],[-35.05,2.7,0]],0.12,scene,'Línea al separador');
+WELLZ.forEach(z=>{const g=new THREE.Group();g.position.set(WELLX,0.3,z);scene.add(g);const b=new THREE.Mesh(new THREE.BoxGeometry(4.4,0.06,4.4),M(0x2f6fd6,{roughness:.8}));b.position.y=0.03;g.add(b);
+ [[4.4,0.25,0.15,0,2.2],[4.4,0.25,0.15,0,-2.2],[0.15,0.25,4.4,2.2,0],[0.15,0.25,4.4,-2.2,0]].forEach(a=>box(a[0],a[1],a[2],0x2a62c9,[a[3],0.12,a[4]],g));hot(g,'Contención del árbol','Bandeja azul bajo cada cabeza de pozo para contener goteos y pérdidas en uniones.')});
+
+// piletas de flowback sobre skid: azules, con piso de rejilla, baranda y buffer tube de entrada
+contain(scene,-10,-7.7,15.4,23,'piletas');
+const PIL=[];const PZ=[-16,-10.5,-5,0.5];
+PZ.forEach((z,i)=>{const g=new THREE.Group();g.position.set(-10,0.3,z);scene.add(g);const L=12,W=3.2,H=2.3;skid(g,L,W);
+ box(L,H,W,BLUE,[0,0.2+H/2,0],g,{roughness:.55});for(let x=-L/2+0.5;x<L/2;x+=1.0){box(0.09,H,0.05,0x5d6368,[x,0.2+H/2,W/2+0.03],g);box(0.09,H,0.05,0x5d6368,[x,0.2+H/2,-W/2-0.03],g)}
+ box(L,0.06,W,0xd9b82a,[0,0.25+H,0],g,{roughness:.8});
+ [[-L/2,-W/2,L/2,-W/2],[-L/2,W/2,L/2,W/2],[-L/2,-W/2,-L/2,W/2],[L/2,-W/2,L/2,W/2]].forEach(([a,b,c,d])=>{seg([a,0.3+H+1.0,b],[c,0.3+H+1.0,d],0.035,YEL,g);seg([a,0.3+H+0.5,b],[c,0.3+H+0.5,d],0.03,YEL,g)});
+ for(let x=-L/2;x<=L/2;x+=1.5){seg([x,0.3+H,-W/2],[x,0.3+H+1.0,-W/2],0.03,YEL,g);seg([x,0.3+H,W/2],[x,0.3+H+1.0,W/2],0.03,YEL,g)}
+ [-0.35,0,0.35].forEach(d=>cyl(0.12,2.4,0xb8bec4,[-L/2+1.6,0.3+H+0.45,d],g,'x',{metalness:.6}));seg([-L/2+1.6,0.3+H,-0.6],[-L/2+1.6,0.3+H+0.45,-0.6],0.04,0x777,g);
+ g.userData.w=new THREE.Object3D();PIL.push(g);
+ hot(g,'Pileta de flowback','Pileta sobre skid con doble compartimiento y buffer tube de entrada. Recibe el agua del separador; la arena fina que pasa el desarenador decanta en el fondo y se retira con camión de vacío a un volquete, como residuo especial.')});
+lbl('Piletas',[-10,5.5,-8],'raw');volquete(scene,-31,-30,'Volquete de arena de piletas');lbl('Arena de piletas',[-31,3.5,-30],'');
+poly([[-30,2.0,-0.5],[-30,1.4,-1.6],[-30,0.6,-2.4],[-30,0.6,-3],[-24,0.6,-3],[-24,0.6,-16],[-16.05,0.6,-16]],0.1,0x5a3214);
+poly([[-24,0.6,-10.5],[-16.05,0.6,-10.5]],0.1,0x5a3214);poly([[-24,0.6,-5],[-16.05,0.6,-5]],0.1,0x5a3214);poly([[-24,0.6,-3],[-24,0.6,0.5],[-16.05,0.6,0.5]],0.1,0x5a3214);
+// bombeo de transferencia (A/B) desde las piletas
+const PS1=pumpStation(scene,7,-8,0,'Bombeo de transferencia (A/B)');
+lbl('Bombeo de transferencia',[7,4,-8],'raw');
+const suc1=poly([[-3.95,0.6,-16],[-1.5,0.6,-16],[-1.5,0.6,-8],[PS1.userData.inP.x,0.6,-8]],0.14,0x16181a);PZ.slice(1).forEach(z=>poly([[-3.95,0.6,z],[-1.5,0.6,z]],0.14,0x16181a));
+hot(suc1,'Succión desde las piletas','Manguera de succión que junta la salida de las cuatro piletas hacia el derivador de las bombas.');
+
+// ---------------- MODO MÓVIL: planta modular en el pad ----------------
+const MOV=new THREE.Group();scene.add(MOV);
+const waterTre=0x2f7fa8;
+const pulM=austTank(32,-42,11,3.0,0x8a5a32,MOV,Math.PI/2,'Tanque pulmón (pad)');
+lbl('Tanque pulmón',[32,6,-42],'raw','mov');
+poly([[11,0.6,-8],[14,0.6,-8],[14,0.6,-42],[21.5,0.6,-42]],0.15,0x5a3214,MOV);
+const SK=[['OXIDACIÓN',0x2e5c8a,'Oxidación','Se dosifica oxidante para precipitar hierro y sulfuros y bajar la carga bacteriana.'],
+ ['CLARIFICACIÓN',0x3b7a57,'Clarificación (DAF)','Flotación por aire disuelto y coagulación: separa sólidos finos, aceite residual y precipitados. Los lodos salen por cañería hacia el tanque de lodos.'],
+ ['FILTRACIÓN',0x7a5c2e,'Filtración multimedia','Filtros de arena y antracita retienen lo que quedó en suspensión.'],
+ ['DESINFECCIÓN',0x6a3d7a,'Desinfección','Biocida o UV para que el agua no forme biopelícula en tanques ni en el pozo. No se desaliniza: el agua sigue salada.']];
+const SKX=[24,39,54,69],TRZ=[-11,-5];
+// plantas modulares sobre semirremolque: pretratamiento (separación, oxidación, DAF) y filtración/control
+const TEAL=0x1f6a85,TEAL2=0x18566c;
+function semi(par,x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);const L=16,W=2.6,D=1.25;
+ box(L-3,0.3,W,TEAL2,[1.5,D,0],g,{metalness:.4});box(3,0.3,W,TEAL2,[-L/2+1.5,D+0.45,0],g,{metalness:.4});box(0.4,0.75,W,TEAL2,[-L/2+3,D+0.2,0],g);
+ [-1,1].forEach(s=>{box(L-3.2,0.55,0.08,TEAL,[1.6,D-0.3,s*(W/2-0.04)],g);cyl(0.07,0.9,0x555,[-L/2+4.2,0.6,s*0.95],g);box(0.4,0.06,0.4,0x444,[-L/2+4.2,0.15,s*0.95],g)});
+ [L/2-1.6,L/2-2.9,L/2-4.2].forEach(xx=>{[-1,1].forEach(s=>{cyl(0.52,0.34,0x16181a,[xx,0.55,s*0.95],g,'z');cyl(0.52,0.34,0x16181a,[xx,0.55,s*0.55],g,'z');cyl(0.25,0.36,0x9aa0a6,[xx,0.55,s*1.13],g,'z')});cyl(0.08,2.2,0x333,[xx,0.55,0],g,'z')});
+ for(let i=0;i<6;i++)box(0.35,0.4,0.05,i%2?0x111111:0xf2c230,[L/2-0.05,D-0.25,-1.0+i*0.4],g);
+ g.userData.top=D+0.15;hot(g,name,'Planta modular montada sobre semirremolque: llega armada, se nivela con sus patas de apoyo y se conecta con mangueras. Se muda con cada pad.');return g}
+function prePlant(par,x,z,j){const g=semi(par,x,z,'Planta modular · pretratamiento (tren '+j+')');const T=g.userData.top;
+ const tk=new THREE.Group();tk.position.set(0,T,0);g.add(tk);
+ box(8,2.6,2.3,TEAL,[0,1.3,0],tk,{roughness:.5});for(let i=-3.8;i<=3.8;i+=0.95){box(0.08,2.6,0.06,TEAL2,[i,1.3,1.18],tk);box(0.08,2.6,0.06,TEAL2,[i,1.3,-1.18],tk)}
+ box(2.6,0.9,2.3,TEAL,[-5.2,0.45,0],tk);box(0.7,0.9,0.15,0xc9ccd0,[1.6,1.6,1.25],tk,{metalness:.6});box(0.9,1.1,0.15,0xc9ccd0,[3.0,1.4,1.25],tk,{metalness:.6});box(0.5,0.5,0.1,0x9aa0a6,[0.4,2.0,1.22],tk);
+ [0.3,0.65,1.0].forEach(y=>cyl(0.09,4.5,0x7a8086,[-1.5,y,1.32],tk,'x',{metalness:.5}));cyl(0.28,0.6,0x1f3c70,[-4.2,0.35,1.3],tk,'z');cyl(0.28,0.6,0x1f3c70,[-3.3,0.35,1.3],tk,'z');
+ [[-2,-1.1],[-2,1.1],[2,-1.1],[2,1.1]].forEach(([a,b])=>{});[[-4,-1.15,4,-1.15],[-4,1.15,4,1.15],[4,-1.15,4,1.15]].forEach(([a,b,c,d])=>{seg([a,3.6,b],[c,3.6,d],0.035,0xf2c230,tk);seg([a,3.1,b],[c,3.1,d],0.03,0xf2c230,tk)});
+ for(let i=0;i<7;i++)box(0.9,0.05,0.25,0xf2c230,[4.4+i*0.32,2.6-i*0.4,0.6],tk);seg([4.3,2.6,0.15],[6.6,0.1,0.15],0.04,0xf2c230,tk);seg([4.3,2.6,1.05],[6.6,0.1,1.05],0.04,0xf2c230,tk);seg([4.3,3.6,1.05],[6.6,1.1,1.05],0.03,0xf2c230,tk);
+ const a=new THREE.Group();a.position.set(-5.2,T,0);g.add(a);hot(a,'Separación primaria','Primera etapa de la planta modular: remueve sólidos gruesos y arena que pasaron el well testing.');
+ const b=new THREE.Group();b.position.set(-2,T,0);g.add(b);hot(tk,'Oxidación y flotación por aire disuelto (DAF)','El oxidante precipita hierro y sulfuros; la flotación por aire disuelto separa sólidos livianos, hidrocarburos y grasas. Los lodos salen por cañería.');
+ return g}
+function postPlant(par,x,z,j){const g=semi(par,x,z,'Planta modular · filtración y control (tren '+j+')');const T=g.userData.top;
+ const f=new THREE.Group();f.position.set(-3,T,0);g.add(f);box(7,0.15,2.4,0x6d7378,[0,0.08,0],f);
+ [[-2.6,-0.6],[-1.7,-0.6],[-0.8,-0.6],[-2.6,0.5],[-1.7,0.5]].forEach(([a,b])=>{cyl(0.36,2.4,0xeef0ee,[a,1.4,b],f,null,{roughness:.4});const c=new THREE.Mesh(new THREE.SphereGeometry(0.36,14,8,0,6.3,0,Math.PI/2),M(0xeef0ee));c.position.set(a,2.6,b);f.add(c)});
+ [[0.6,0.4],[1.6,0.4]].forEach(([a,b])=>{cyl(0.32,3.2,0xc9ced3,[a,1.75,b],f,null,{metalness:.7,roughness:.3});cyl(0.2,0.4,0x1f3c70,[a,3.5,b],f)});
+ cyl(0.08,6,0x7a8086,[0,0.5,1.05],f,'x',{metalness:.5});cyl(0.08,6,0x7a8086,[0,0.5,-1.05],f,'x',{metalness:.5});box(0.9,1.3,0.5,0xc9ccd0,[2.8,0.8,-0.8],f,{metalness:.6});cyl(0.25,0.5,0x1f3c70,[2.4,0.4,0.7],f,'z');
+ hot(f,'Filtración avanzada','Columnas de filtración que reducen turbidez y trazas remanentes. Al final se dosifica biocida para que el agua no forme biopelícula.');
+ const t=new THREE.Group();t.position.set(4.6,T,0);g.add(t);box(5.6,1.9,2.5,TEAL,[0,0.95,0],t,{roughness:.5});for(let i=-2.6;i<=2.6;i+=0.65){box(0.07,1.9,0.06,TEAL2,[i,0.95,1.26],t);box(0.07,1.9,0.06,TEAL2,[i,0.95,-1.26],t)}
+ for(let i=0;i<10;i++)box(0.28,0.25,0.05,i%2?0x111111:0xf2c230,[-2.5+i*0.56,0.15,1.29],t);
+ box(0.8,1.0,0.15,0xc9ccd0,[-2.2,1.3,-1.33],t,{metalness:.6});
+ hot(t,'Automatización y control','Tanque de agua tratada de la planta y tablero de control: operación continua, monitoreo remoto y alarmas.');
+ return g}
+contain(MOV,40,-8,46,11,'plantas modulares');
+TRZ.forEach((z,j)=>{prePlant(MOV,29,z,j+1);postPlant(MOV,51,z,j+1)});
+lbl('Plantas modulares (2 trenes)',[40,6.5,-8],'tre','mov');
+poly([[32,0.6,-31.5],[32,0.6,-18],[16,0.6,-18],[16,0.6,-5],[17.8,0.6,-5]],0.12,0x5a3214,MOV);poly([[16,0.6,-11],[17.8,0.6,-11]],0.12,0x5a3214,MOV);
+const SIDE={'-11':1,'-5':-1};
+TRZ.forEach(z=>{const s=SIDE[z],zs=z+s*1.75,zw=z+s*1.25;
+ poly([[17.8,0.6,z],[19.5,0.6,z],[19.5,0.6,zs],[25.6,0.6,zs],[25.6,2.6,zs],[25.6,2.6,zw]],0.12,0x5a3214,MOV);
+ poly([[33.6,2.6,zw],[33.6,2.6,zs],[33.6,0.6,zs],[45.5,0.6,zs],[45.5,2.4,zs],[45.5,2.4,zw]],0.12,0x5a3214,MOV);
+ poly([[57.5,2.0,zw],[57.5,2.0,zs],[57.5,0.6,zs],[62,0.6,zs],[62,0.6,z]],0.13,0x1f5e80,MOV)});
+// lodos: cañería desde los DAF al tanque de lodos, filtro prensa y volquetes
+contain(MOV,40,16,26,13,'lodos');
+const sl=poly([[31,2.2,-3.75],[31,0.6,-2.9],[31,0.6,-1.5],[46,0.6,-1.5],[46,0.6,12.3]],0.1,0x4a3a2a,MOV);hot(sl,'Cañería de lodos','Lleva los lodos de la flotación de las plantas modulares al tanque de lodos.');poly([[31,2.2,-12.25],[31,0.6,-13.2],[31,0.6,-14],[38,0.6,-14],[38,0.6,-8],[31.5,0.6,-8],[31.5,0.6,-2.9],[31,0.6,-2.9]],0.1,0x4a3a2a,MOV);
+sludgeTank(MOV,46,14,1.6,'Tanque de lodos');filterPress(MOV,38,13);volquete(MOV,31,19.5);volquete(MOV,41,19.5);
+poly([[44.4,0.9,13.6],[41.3,1.0,13.2]],0.08,0x4a3a2a,MOV);
+lbl('Lodos',[40,5,16],'','mov');
+// agua tratada: dos tanques con su escalera y recinto
+const trA=austTank(98,-40,17,3.0,waterTre,MOV,Math.PI/2,'Tanque de agua tratada A'),trB=austTank(98,4,17,3.0,waterTre,MOV,-Math.PI/2,'Tanque de agua tratada B');
+lbl('Agua tratada',[98,6,-18],'tre','mov');
+poly([[62,0.6,-11],[78,0.6,-11],[78,0.6,-40],[81.8,0.6,-40]],0.15,0x1f5e80,MOV);poly([[62,0.6,-5],[78,0.6,-5],[78,0.6,4],[81.8,0.6,4]],0.15,0x1f5e80,MOV);
+// bombeo de despacho del agua tratada y layflat hacia el próximo pad
+const PS2=pumpStation(MOV,124,-18,0,'Bombeo de despacho (A/B)');
+lbl('Bombeo de despacho',[124,4,-18],'tre','mov');
+poly([[114.2,0.6,-40],[118,0.6,-40],[118,0.6,-18],[PS2.userData.inP.x,0.6,-18]],0.16,0x16181a,MOV);poly([[114.2,0.6,4],[118,0.6,4],[118,0.6,-18]],0.16,0x16181a,MOV);
+layflat([[PS2.userData.outP.x,-18],[132,-18],[132,0],[132,52],[134,54],[300,54]],MOV,'Layflat 12" al próximo pad','Agua tratada hacia el blender del próximo pad, donde se mezcla con agua dulce en el blend.');
+lbl('Al blender del próximo pad',[200,3,54],'tre','mov');
+{const g=container(60,25,0xeceeef,'LABORATORIO',MOV,9);box(1.6,1.2,1,0x9aa0a4,[3.5,1.0,1.8],g);hot(g,'Laboratorio','Control antes de mandar al blender: ATP (bacterias), hierro, cloruros, pH y compatibilidad con el reductor de fricción.')}
+lbl('Laboratorio',[60,5,25],'tre','mov');
+
+
+// ---------------- MODO CENTRAL: layflat + planta del bloque ----------------
+const CEN=new THREE.Group();scene.add(CEN);
+const LINE_Z=50;
+layflat([[PS1.userData.outP.x,-8],[16,-8],[16,38],[18,40],[148,40],[150,42],[150,48],[152,LINE_Z],[538,LINE_Z],[540,46],[540,40],[553.8,40]],CEN,'Layflat de flowback al bloque','Agua de retorno cruda hacia la planta central (la escena comprime la distancia). Puede ser layflat TPU, HDPE o cañería enterrada.');
+lbl('Layflat de flowback al bloque',[300,3,LINE_Z],'raw','cen');
+[[150,'2 km'],[250,'4 km'],[350,'6 km'],[450,'8 km'],[530,'≈10 km']].forEach(([x,t])=>{box(0.4,1.6,0.4,0xf2c230,[x,1.0,LINE_Z-3],CEN)});
+{const g=new THREE.Group();g.position.set(330,0,LINE_Z);CEN.add(g);box(6,0.5,4,0x8b8f93,[0,0.25,0],g);hot(g,'Cruce de camino','Alcantarilla o caño camisa donde la línea cruza un camino: requiere permiso e ingeniería.')}
+const PC=new THREE.Group();PC.position.set(660,0,0);CEN.add(PC);
+const padC=new THREE.Mesh(new THREE.BoxGeometry(260,0.3,220),padMat);padC.position.set(0,0.15,0);padC.receiveShadow=true;PC.add(padC);
+austTank(-90,40,17,3.0,0x8a5a32,PC,Math.PI,'Pulmón central 1');austTank(-90,-30,17,3.0,0x8a5a32,PC,Math.PI,'Pulmón central 2');
+lbl('Pulmón central',[-90+660,7,5],'raw','cen');
+contain(PC,-4,0,66,34,'trenes de tratamiento');
+[-14,14].forEach((z,j)=>{for(let i=0;i<4;i++){const c=container(-28+i*16,z,SK[i][1],SK[i][0],PC);hot(c,SK[i][2]+' · tren '+(j+1),SK[i][3])}});
+lbl('Trenes de tratamiento',[0+660,6,0],'tre','cen');
+contain(PC,-10,-42,40,20,'clarificadores');
+[[-20,-42],[0,-42]].forEach(([x,z])=>{const g=new THREE.Group();g.position.set(x,0.3,z);PC.add(g);cyl(7,3.2,0x9aa0a4,[0,1.6,0],g,null,{metalness:.4},40);const w=new THREE.Mesh(new THREE.CircleGeometry(6.8,40),M(0x6d6a52,{roughness:.2}));w.rotation.x=-Math.PI/2;w.position.y=3.0;g.add(w);box(14,0.3,0.8,0x555,[0,3.4,0],g);hot(g,'Clarificador','Decantador circular: separa los sólidos; los lodos salen por cañería al espesador.')});
+const T1=austTank(80,-55,15,3.0,waterTre,PC,Math.PI/2,'Agua tratada 1'),T2=austTank(80,0,15,3.0,waterTre,PC,Math.PI/2,'Agua tratada 2'),T3=austTank(80,55,15,3.0,waterTre,PC,Math.PI/2,'Agua tratada 3');
+lbl('Agua tratada',[80+660,7,27],'tre','cen');
+{const g=container(30,72,0xeceeef,'LABORATORIO',PC,10);hot(g,'Laboratorio','ATP, hierro, cloruros, pH y compatibilidad con el reductor de fricción antes de despachar.')}
+lbl('Laboratorio',[30+660,5,72],'tre','cen');
+{const g=container(-10,78,0xd9dcdf,'OFICINA',PC,10);hot(g,'Oficina y sala de control','Operación 24/7 de la planta.')}
+// lodos: cañería desde clarificadores a espesador, filtro prensa y volquetes; rechazos a sumidero
+contain(PC,36,-74,40,22,'lodos');
+const slC=poly([[-12,0.6,-49],[-12,0.6,-58],[24,0.6,-58],[24,0.6,-68.4]],0.15,0x4a3a2a,PC);hot(slC,'Cañería de lodos','Lleva los lodos de los clarificadores al espesador.');poly([[0,0.6,-49],[0,0.6,-58]],0.15,0x4a3a2a,PC);
+sludgeTank(PC,24,-71,2.6,'Espesador de lodos');filterPress(PC,40,-70);volquete(PC,34,-80);volquete(PC,46,-80);
+lbl('Lodos',[36+660,5,-74],'','cen');
+{const g=new THREE.Group();g.position.set(-40,0.3,-88);PC.add(g);box(14,0.3,10,0x8b8f93,[0,0.15,0],g);cyl(0.6,2.2,0x2c4f8c,[0,1.4,0],g);cyl(0.45,0.5,0xc0392b,[0,2.7,0],g);
+ hot(g,'Sumidero (pozo inyector)','Recibe los rechazos y el agua que no conviene tratar.')}
+const rj=poly([[21.4,0.6,-71],[10,0.6,-71],[10,0.6,-88],[-33,0.6,-88]],0.12,0x5a3214,PC);hot(rj,'Línea de rechazos al sumidero','Rechazos del tratamiento hacia el pozo inyector.');
+lbl('Sumidero',[-40+660,4,-88],'','cen');
+// cañerías internas
+poly([[-73.8,0.6,40],[-50,0.6,40],[-50,0.6,-30],[-73.8,0.6,-30]],0.25,0x5a3214,PC);poly([[-50,0.6,14],[-33.95,0.6,14]],0.25,0x5a3214,PC);poly([[-50,0.6,-14],[-33.95,0.6,-14]],0.25,0x5a3214,PC);
+[-14,14].forEach(z=>poly([[25.95,0.6,z],[50,0.6,z]],0.25,0x1f5e80,PC));poly([[50,0.6,-55],[50,0.6,55]],0.25,0x1f5e80,PC);[-55,0,55].forEach(z=>poly([[50,0.6,z],[65.7,0.6,z]],0.25,0x1f5e80,PC));
+[-55,0,55].forEach(z=>poly([[94.3,0.6,z],[102,0.6,z]],0.25,0x16181a,PC));poly([[102,0.6,55],[102,0.6,-90],[106,0.6,-90]],0.25,0x16181a,PC);
+const PS3=pumpStation(PC,110,-90,0,'Bombeo de despacho (A/B)');
+lbl('Bombeo de despacho',[110+660,4,-90],'tre','cen');
+layflat([[PS3.userData.outP.x,-90],[1100,-90]],CEN,'Layflat de agua tratada a los pads','Despacho de agua tratada a los pads del bloque, según el calendario de fractura.');
+lbl('A los pads del bloque · blender',[960,3,-90],'tre','cen');
+
+// ---------------- personas (operadores en puestos fijos) ----------------
+function person(x,z,ry,col=0x2b5fa8){const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=ry;scene.add(g);
+ box(0.45,0.8,0.28,col,[0,1.1,0],g);[-0.12,0.12].forEach(s=>box(0.16,0.75,0.18,0x1f3c70,[s,0.4,0],g));
+ const h=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8),M(0xd9b08c));h.position.y=1.68;g.add(h);const hel=new THREE.Mesh(new THREE.SphereGeometry(0.18,10,8,0,Math.PI*2,0,Math.PI/2),M(0xffffff));hel.position.y=1.72;g.add(hel);
+ box(0.47,0.08,0.3,0xd6f03a,[0,1.25,0],g);hot(g,'Operador','Personal de well testing o de planta, con EPP completo.');return g}
+person(-33,4.2,Math.PI);person(-48,3.6,Math.PI*0.9);
+[person(60,29.5,Math.PI),person(46,-2.2,0)].forEach(p=>MOV.attach(p));
+
+// ---------------- campamento mínimo, camionetas, operadores trabajando y camiones en movimiento ----------------
+const MOVERS=[];
+function pickup(x,z,ry,par=scene,col=0xf4f4f2){const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=ry;par.add(g);
+ box(5.2,0.7,1.9,col,[0,0.85,0],g,{metalness:.5,roughness:.35});box(2.3,0.75,1.8,col,[0.55,1.55,0],g,{metalness:.5,roughness:.35});box(2.2,0.55,1.82,0x1d2a36,[0.6,1.6,0],g,{metalness:.7,roughness:.15});
+ box(2.0,0.08,1.8,0x2a2c2e,[-1.6,1.25,0],g);[[1.65,0.95],[1.65,-0.95],[-1.6,0.95],[-1.6,-0.95]].forEach(([a,b])=>cyl(0.4,0.3,0x111,[a,0.45,b],g,'z'));
+ box(1.9,0.12,0.12,0x333,[-1.2,1.9,0.85],g);box(0.2,0.15,0.5,0xff8a00,[0.6,2.0,0],g,{emissive:0xff6a00,emissiveIntensity:.4}); // barra antivuelco y baliza
+ seg([-2.4,1.2,-0.8],[-2.4,4.0,-0.8],0.025,0xdddddd,g);const fl=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.4),new THREE.MeshStandardMaterial({color:0xff6a00,side:THREE.DoubleSide}));fl.position.set(-2.1,3.8,-0.8);g.add(fl); // pértiga con bandera
+ hot(g,'Camioneta 4×4','Habilitada para yacimiento: barra antivuelco, baliza, pértiga con bandera y arrestallamas. Estacionada fuera de los caminos.');return g}
+function trailer(x,z,ry,txt,par=scene){const g=container(x,z,0xeef0f1,txt,par,12);g.rotation.y=ry;for(let i=-4;i<=4;i+=2.6)box(1.1,0.7,0.06,0x2c4a62,[i,1.9,-1.25],g,{metalness:.6,roughness:.2});box(1.4,0.2,1.2,0x8b8f93,[5.2,0.3,1.8],g);
+ hot(g,'Campamento · '+txt.toLowerCase(),'Trailer del campamento mínimo de la locación.');return g}
+// campamento en el sector libre al sur del laboratorio, lejos de pozos, antorcha, piletas y del recorrido de camiones
+contain(scene,40,70,8,3.6,'generador y gasoil');
+trailer(8,48,0,'COMEDOR');trailer(8,55,0,'DORMITORIO');trailer(8,62,0,'DORMITORIO');trailer(26,48,0,'OFICINA');
+{const g=new THREE.Group();g.position.set(25,0.3,58.5);scene.add(g);box(7,0.2,2.8,0x6d7378,[0,0.1,0],g);cyl(1.1,5.2,0xe9ebe6,[-0.6,1.3,0],g,'x',{roughness:.5});[-2.6,-0.6,1.4].forEach(x=>{cyl(0.25,0.3,0x2b6cd6,[x,2.5,0],g)});box(1.1,1.6,1.0,0x9aa0a6,[2.8,1.0,0],g,{metalness:.5});box(0.8,0.5,0.03,0x2b6cd6,[2.8,1.3,0.52],g);
+ pipe([[-12,0.4,-3.5],[-12,0.4,0],[-3.4,0.4,0]],0.08,0x7a6a52,g);
+ hot(g,'Planta compacta de tratamiento cloacal','Trata los efluentes de los baños y la cocina del campamento (tipo BACSA): el agua tratada se reusa o se dispone según el permiso, y los barros se retiran con camión atmosférico.')}lbl('Planta cloacal',[25,4.5,58.5],'');
+{const g=new THREE.Group();g.position.set(32,0.3,57);scene.add(g);cyl(1.2,2.4,0xf2f2f0,[0,1.5,0],g);box(2.8,0.3,2.8,0x9aa0a4,[0,0.15,0],g);hot(g,'Tanque de agua potable','Agua para el campamento.')}
+{const g=new THREE.Group();g.position.set(40,0.3,70);scene.add(g);box(3.4,1.6,1.4,0xe8b90c,[0,0.95,0],g);box(0.2,0.6,0.2,0x333,[1.2,2.0,0],g);hot(g,'Grupo electrógeno','Energía para el campamento y la iluminación.')}
+lbl('Campamento',[14,5,55],'');
+// camionetas estacionadas en reversa: cola contra el borde de la locación, trompa hacia la calle interna
+[2,5.5,9,12.5,16].forEach((x,i)=>pickup(x,75.5,Math.PI/2,scene,i%2?0xdfe5ea:0xf4f4f2));
+lbl('Estacionamiento (en reversa)',[9,4,74],'');
+[[-44,103],[-40.5,103]].forEach(([x,z],i)=>pickup(x,z,Math.PI/2,PC,i?0xdfe5ea:0xf4f4f2));
+// ---------------- seguridad industrial y laboral ----------------
+const WIND=0; // viento del oeste: las mangas apuntan al este (+x)
+const SOCKS=[];
+function windsock(par,x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);seg([0,0,0],[0,9,0],0.08,0xdcdcdc,g);
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(0.35,0.03,6,16),M(0x888));ring.rotation.y=Math.PI/2;ring.position.set(0.1,8.8,0);g.add(ring);
+ const sock=new THREE.Group();sock.position.set(0.1,8.8,0);g.add(sock);
+ for(let i=0;i<5;i++){const s=new THREE.Mesh(new THREE.CylinderGeometry(0.5-i*0.07,0.5-(i+1)*0.07,0.75,12,1,true),new THREE.MeshStandardMaterial({color:i%2?0xffffff:0xff5a1f,side:THREE.DoubleSide}));s.rotation.z=-Math.PI/2;s.position.x=0.375+i*0.75;sock.add(s)}
+ SOCKS.push(sock);hot(g,'Manga de viento'+(name?' · '+name:''),'Indica de dónde viene el viento: ante un escape de gas se evacua en dirección perpendicular o contraria, hacia el punto de encuentro que queda a barlovento.');return g}
+function meetPoint(par,x,z,n){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);const c=new THREE.Mesh(new THREE.RingGeometry(3.2,3.6,40),new THREE.MeshBasicMaterial({color:0x1fa04a}));c.rotation.x=-Math.PI/2;c.position.y=0.04;g.add(c);
+ seg([0,0,0],[0,2.6,0],0.05,0x888,g);const s=new THREE.Mesh(new THREE.PlaneGeometry(1.6,1.1),new THREE.MeshBasicMaterial({map:labelTex('PUNTO DE ENCUENTRO '+n,'#1fa04a','#ffffff',1024,180),side:THREE.DoubleSide}));s.position.set(0,2.7,0);g.add(s);
+ hot(g,'Punto de encuentro '+n,'Lugar de reunión ante una emergencia, para el conteo del personal. Hay dos en extremos opuestos: se usa el que queda a barlovento según la manga de viento.');return g}
+function chainFence(par,pts,name){const g=new THREE.Group();par.add(g);const posts=[];
+ for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];const L=Math.hypot(b[0]-a[0],b[1]-a[1]);const n=Math.max(1,Math.round(L/3));for(let k=0;k<n;k++)posts.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n,i===pts.length-2&&k===n-1])}posts.push([...pts[pts.length-1],true]);
+ posts.forEach(p=>{const c=new THREE.Mesh(new THREE.ConeGeometry(0.22,0.75,12),M(0xff6a00,{roughness:.6}));c.position.set(p[0],0.3+0.375,p[1]);c.castShadow=true;g.add(c);box(0.42,0.04,0.42,0x222,[p[0],0.32,p[1]],g);const w=new THREE.Mesh(new THREE.CylinderGeometry(0.225,0.2,0.1,12),M(0xffffff));w.position.set(p[0],0.3+0.42,p[1]);g.add(w)});
+ for(let i=0;i<posts.length-1;i++){const a=posts[i],b=posts[i+1];if(Math.hypot(b[0]-a[0],b[1]-a[1])>4.5)continue;const N=6;for(let k=0;k<N;k++){const t0=k/N,t1=(k+1)/N,sag=t=>0.25*4*t*(1-t);
+  seg([a[0]+(b[0]-a[0])*t0,1.0-sag(t0),a[1]+(b[1]-a[1])*t0],[a[0]+(b[0]-a[0])*t1,1.0-sag(t1),a[1]+(b[1]-a[1])*t1],0.025,k%2?0xffffff:0xd01e1e,g)}}
+ hot(g,'Delimitación con conos y cadena'+(name?' · '+name:''),'Restringe el paso a zonas con líneas de alta presión o equipos en operación: solo ingresa personal autorizado con permiso de trabajo.');return g}
+function cone(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);const c=new THREE.Mesh(new THREE.ConeGeometry(0.2,0.7,12),M(0xff6a00));c.position.y=0.35;c.castShadow=true;g.add(c);const w=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.16,0.12,12),M(0xffffff));w.position.y=0.42;g.add(w);box(0.4,0.04,0.4,0x222,[0,0.02,0],g);hot(g,'Cono de señalización','Marca circulación y zonas de maniobra.');return g}
+function extinguisher(par,x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);seg([-0.35,0,0],[-0.35,1.6,0],0.03,0xc81e1e,g);seg([0.35,0,0],[0.35,1.6,0],0.03,0xc81e1e,g);box(0.8,0.05,0.4,0xc81e1e,[0,0.25,0],g);
+ cyl(0.16,0.7,0xd11f1f,[0,0.65,0],g,null,{roughness:.35});cyl(0.05,0.12,0x222,[0,1.06,0],g);const s=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.4),new THREE.MeshBasicMaterial({map:labelTex('MATAFUEGO','#c81e1e','#ffffff',512,140),side:THREE.DoubleSide}));s.position.set(0,1.5,0);g.add(s);
+ hot(g,'Matafuego'+(name?' · '+name:''),'Extintor de polvo químico ABC (y rodante en áreas de hidrocarburo), señalizado y a la vista, con su tarjeta de control.');return g}
+const BEAC=[];
+function gasDetector(par,x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);seg([0,0,0],[0,2.2,0],0.04,0x777,g);box(0.3,0.4,0.18,0xf2c230,[0,1.4,0.1],g);cyl(0.07,0.15,0x333,[0,1.15,0.1],g);
+ const b=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,8),new THREE.MeshBasicMaterial({color:0x2bd24a}));b.position.set(0,2.3,0);g.add(b);BEAC.push(b);box(0.2,0.2,0.1,0xcc2222,[0,1.95,0.08],g);
+ hot(g,'Detector fijo de gases'+(name?' · '+name:''),'Mide H₂S y explosividad (LEL) y activa baliza y sirena si se supera la alarma. Los operadores llevan además su detector personal de 4 gases.');return g}
+function eyewash(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);seg([0,0,0],[0,2.3,0],0.05,0x2bb24a,g);seg([0,2.3,0],[0.5,2.3,0],0.04,0x2bb24a,g);const h=new THREE.Mesh(new THREE.ConeGeometry(0.22,0.18,14),M(0x2bb24a));h.position.set(0.5,2.15,0);g.add(h);
+ seg([0,1.0,0],[0.4,1.0,0],0.03,0x2bb24a,g);const bowl=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.12,0.1,14),M(0xf2c230));bowl.position.set(0.45,1.08,0);g.add(bowl);
+ hot(g,'Ducha y lavaojos de emergencia','Junto a la dosificación de químicos y al laboratorio: primeros 15 minutos ante salpicaduras.');return g}
+function spillKit(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);cyl(0.35,0.9,0xf2c230,[0,0.45,0],g);const t=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.3),new THREE.MeshBasicMaterial({map:labelTex('KIT DERRAME','#f2c230','#111',512,140)}));t.position.set(0,0.6,0.36);g.add(t);
+ hot(g,'Kit antiderrame','Paños y barreras absorbentes para contener una pérdida antes de que salga del recinto.');return g}
+function sign(par,x,z,ry,lines,name){const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=ry;par.add(g);[-1.1,1.1].forEach(a=>seg([a,0,0],[a,2.6,0],0.05,0x777,g));
+ const c=document.createElement('canvas');c.width=1024;c.height=640;const k=c.getContext('2d');k.fillStyle='#ffffff';k.fillRect(0,0,1024,640);
+ lines.forEach((l,i)=>{k.fillStyle=l[1];k.fillRect(0,i*640/lines.length,1024,640/lines.length-6);k.fillStyle=l[2];k.font='bold 62px Arial';k.textAlign='center';k.textBaseline='middle';k.fillText(l[0],512,(i+0.5)*640/lines.length)});
+ const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;const p=new THREE.Mesh(new THREE.PlaneGeometry(2.6,1.6),new THREE.MeshBasicMaterial({map:t,side:THREE.DoubleSide}));p.position.y=2.2;g.add(p);
+ hot(g,name,lines.map(l=>l[0]).join(' · '));return g}
+// mangas de viento
+windsock(scene,-60,-34,'well testing');{const g=container(-36,13,0xd6d9dc,'WELL TESTING',scene,6);box(1.2,0.8,0.3,0x333,[1.5,1.6,1.35],g);hot(g,'Cabina de well testing','Registro de presiones, caudales y muestras de cada pozo; desde acá se coordinan los cambios de choke.')}windsock(scene,-40.5,16,'cabina de well testing');windsock(scene,-26,-26,'piletas');windsock(scene,-4,66,'campamento');windsock(MOV,74,-22,'tratamiento');lbl('Manga de viento',[-4,10.5,66],'');lbl('Manga de viento',[-60,10.5,-34],'');windsock(PC,-120,96,'planta central');
+// puntos de encuentro en extremos opuestos
+meetPoint(scene,-110,-70,1);meetPoint(scene,146,-30,2);meetPoint(scene,-12,70,3);lbl('Punto de encuentro 1',[-110,4,-70],'');lbl('Punto de encuentro 2',[146,4,-30],'');lbl('Punto de encuentro 3',[-12,4,70],'');
+meetPoint(PC,-115,-100,1);meetPoint(PC,120,100,2);
+// delimitación con conos y cadena: zona de pozos y líneas de alta presión, y antorcha
+chainFence(scene,[[-64,3.5],[-64,32],[-98,32],[-98,-32],[-64,-32],[-64,-3.5]],'pozos y colector');
+chainFence(scene,[[-51,-49],[-25,-49],[-25,-75],[-51,-75],[-51,-49]],'antorcha');
+// conos en las esquinas de las estaciones de bombeo y en la entrada
+[[1.6,-12.6],[12.4,-12.6],[1.6,-3.4],[12.4,-3.4]].forEach(p=>cone(scene,...p));
+[[119.4,-24.2],[129.6,-24.2],[119.4,-12.6],[129.6,-12.6]].forEach(p=>cone(MOV,...p));
+// matafuegos
+[[-52,-4.6,'well testing'],[-28,-4.4,'separador'],[-1,-20,'piletas'],[11.8,-13.6,'bombeo de transferencia'],[46,-20,'trenes'],[66,27,'laboratorio'],[55.5,10,'lodos'],[20,51.2,'campamento'],[130,-22.8,'bombeo de despacho']].forEach(([x,z,n],i)=>extinguisher(i>=4&&i!==7?MOV:scene,x,z,n));
+extinguisher(PC,-40,-20,'trenes');extinguisher(PC,104,-95.8,'bombeo de despacho');extinguisher(PC,-75,58,'pulmón');
+// detectores fijos de gases
+gasDetector(scene,-26,3.2,'separador');gasDetector(scene,-62,-4.6,'desander y choke');gasDetector(scene,-19,-24,'piletas');gasDetector(MOV,18,-56,'pulmón');gasDetector(PC,-70,62,'pulmón central');
+// duchas lavaojos, kits antiderrame
+eyewash(MOV,40,-20);eyewash(MOV,68,20);eyewash(PC,-42,20);
+spillKit(scene,-22.5,-12);spillKit(scene,-1,-23.4);spillKit(MOV,52,-20);spillKit(PC,-60,-50);
+// cartelería en el ingreso y en zonas clasificadas
+sign(scene,146,51,-Math.PI/2,[['LOCACIÓN · FLOWBACK','#1f3a4d','#ffffff'],['USO OBLIGATORIO DE EPP','#1f5fbf','#ffffff'],['MÁXIMO 20 km/h','#ffffff','#111'],['PROHIBIDO FUMAR','#c81e1e','#ffffff']],'Cartel de ingreso');
+sign(scene,-66,-36,Math.PI/2,[['ÁREA CLASIFICADA','#f2c230','#111'],['ALTA PRESIÓN','#f2c230','#111'],['SOLO PERSONAL AUTORIZADO','#c81e1e','#ffffff']],'Cartel de zona clasificada');
+sign(PC,-128,40,Math.PI/2,[['PLANTA DE TRATAMIENTO','#1f3a4d','#ffffff'],['USO OBLIGATORIO DE EPP','#1f5fbf','#ffffff'],['PROHIBIDO FUMAR','#c81e1e','#ffffff']],'Cartel de ingreso a la planta');
+lbl('Zona delimitada',[-81,3,-36],'');
+// ---------------- iluminación, residuos, campamentos y servicios ----------------
+function lightCart(par,x,z,ry,name){const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=ry||0;par.add(g);
+ box(3.2,1.3,1.6,0xd23a1e,[0,0.95,0],g,{roughness:.45});box(3.4,0.12,1.7,0x2a2c2e,[0,0.3,0],g);[-0.9,0.9].forEach(zz=>cyl(0.35,0.25,0x111,[-0.4,0.35,zz*1.0],g,'z'));
+ seg([1.7,0.35,0],[2.8,0.35,0],0.05,0x2a2c2e,g);[[1.4,0.8],[1.4,-0.8],[-1.4,0.8],[-1.4,-0.8]].forEach(([a,b])=>seg([a,0.3,b],[a*1.3,0.02,b*1.8],0.04,0x777,g));
+ seg([0,1.6,0],[0,8.5,0],0.09,0xc9ced1,g);box(1.6,0.1,0.1,0x444,[0,8.6,0],g);
+ [[-0.55,0.35],[0.55,0.35],[-0.55,-0.35],[0.55,-0.35]].forEach(([a,b])=>{box(0.5,0.4,0.18,0x333,[a,8.95+b*0.6+0.2,0.12],g);const l=new THREE.Mesh(new THREE.PlaneGeometry(0.42,0.32),new THREE.MeshBasicMaterial({color:0xfff6d8}));l.position.set(a,8.95+b*0.6+0.2,0.22);g.add(l)});
+ hot(g,name||'Torre de iluminación','Carro de iluminación con mástil telescópico y cuatro reflectores, con su propio generador: turno nocturno y circulación segura. Se ancla con estabilizadores.');return g}
+function mastTower(par,x,z,name){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);box(3,0.6,3,0x9a9a96,[0,0.3,0],g);
+ const h=24;[[-0.5,-0.5],[0.5,-0.5],[-0.5,0.5],[0.5,0.5]].forEach(([a,b])=>seg([a*1.6,0.6,b*1.6],[a*0.5,h,b*0.5],0.07,0xa0a6aa,g));for(let y=2;y<h;y+=2.2){const s=1.6-(1.1)*(y/h);[[-1,-1,1,-1],[1,-1,1,1],[1,1,-1,1],[-1,1,-1,-1]].forEach(([a,b,c,d])=>seg([a*s/2,y,b*s/2],[c*s/2,y,d*s/2],0.04,0xa0a6aa,g))}
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,0.08,6,24),M(0x666));ring.rotation.x=Math.PI/2;ring.position.y=h;g.add(ring);
+ for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const f=new THREE.Group();f.position.set(Math.cos(a)*1.6,h+0.3,Math.sin(a)*1.6);f.rotation.y=-a+Math.PI/2;g.add(f);const b=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,0.25),M(0x333));f.add(b);const l=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.4),new THREE.MeshBasicMaterial({color:0xfff6d8,side:THREE.DoubleSide}));l.position.z=0.13;f.add(l);f.rotateX(0.5)}
+ hot(g,name||'Torre de iluminación central','Torre fija de gran altura con múltiples reflectores: ilumina toda la planta de noche desde un solo punto, alimentada por la red eléctrica.');return g}
+function bins(par,x,z,ry){const g=new THREE.Group();g.position.set(x,0.3,z);g.rotation.y=ry||0;par.add(g);box(4.6,0.12,1.2,0x9a9a96,[0,0.06,0],g);
+ [['#2e9d48','RECICLABLE'],['#f2c230','PELIGROSO'],['#222222','GENERAL'],['#2b6cd6','PLÁSTICO']].forEach(([c,t],i)=>{const x0=-1.65+i*1.1;const col=new THREE.Color(c);cyl(0.42,1.0,col.getHex(),[x0,0.62,0],g,null,{roughness:.5},16);cyl(0.45,0.08,col.getHex(),[x0,1.16,0],g,null,{},16);
+  const lb=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.22),new THREE.MeshBasicMaterial({map:labelTex(t,'#ffffff','#111',512,140)}));lb.position.set(x0,0.75,0.43);g.add(lb)});
+ hot(g,'Punto de residuos','Tachos diferenciados por color: reciclables, peligrosos (trapos y absorbentes con hidrocarburo), generales y plásticos. Los peligrosos salen con manifiesto.');return g}
+function bacsa(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);box(7,0.2,2.8,0x6d7378,[0,0.1,0],g);cyl(1.1,5.2,0xe9ebe6,[-0.6,1.3,0],g,'x',{roughness:.5});[-2.6,-0.6,1.4].forEach(xx=>cyl(0.25,0.3,0x2b6cd6,[xx,2.5,0],g));box(1.1,1.6,1.0,0x9aa0a6,[2.8,1.0,0],g,{metalness:.5});
+ hot(g,'Planta compacta de tratamiento cloacal','Trata los efluentes de baños y cocina (tipo BACSA); los barros se retiran con camión atmosférico.');return g}
+function waterTank(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);cyl(1.4,2.8,0xf2f2f0,[0,1.7,0],g);box(3.2,0.3,3.2,0x9aa0a4,[0,0.15,0],g);hot(g,'Tanque de agua','Agua para consumo, cocina e higiene del personal.');return g}
+function generator(par,x,z){const g=new THREE.Group();g.position.set(x,0.3,z);par.add(g);box(3.4,1.6,1.4,0xe8b90c,[0,0.95,0],g);box(0.2,0.6,0.2,0x333,[1.2,2.0,0],g);hot(g,'Grupo electrógeno','Energía de respaldo del campamento.');return g}
+function campFence(par,pts,name){return chainFence(par,pts,name||'campamento')}
+// --- pad (ambos modos)
+lightCart(scene,-58,-20,0,'Torre de iluminación · pozos y well testing');lightCart(scene,-22,-25,0,'Torre de iluminación · piletas');lightCart(scene,4,-26,0,'Torre de iluminación · bombeo');lightCart(scene,36,46,0,'Torre de iluminación · campamento');
+lightCart(MOV,8,-30,Math.PI/2,'Torre de iluminación · tratamiento');lightCart(MOV,112,-66,0,'Torre de iluminación · tanques');lightCart(MOV,62,14,0,'Torre de iluminación · lodos y laboratorio');
+lbl('Torre de iluminación',[-58,11,-20],'');
+campFence(scene,[[46,70],[46,43],[-2,43],[-2,79.5],[46,79.5],[46,76.5]],'campamento');lbl('Campamento delimitado',[22,3,43],'');
+bins(scene,30,66,0);bins(scene,-34,18.5,0);bins(MOV,64,-21.5,0);
+// --- planta central: servicios faltantes
+mastTower(PC,-60,88,'Torre de iluminación central');lbl('Torre de iluminación central',[-60+660,28,88],'','cen');
+lightCart(PC,40,-46,0,'Torre de iluminación · clarificadores y lodos');lightCart(PC,112,22,0,'Torre de iluminación · agua tratada');lightCart(PC,-112,-60,0,'Torre de iluminación · pulmón');
+// campamento de la planta central, delimitado
+trailer(58,92,0,'COMEDOR',PC);trailer(58,99,0,'DORMITORIO',PC);trailer(76,92,0,'OFICINA',PC);bacsa(PC,96,95);waterTank(PC,88,86);generator(PC,74,101);bins(PC,104,103,0);
+campFence(PC,[[110,92],[110,84],[46,84],[46,107],[110,107],[110,98]],'campamento de la planta central');
+lbl('Campamento',[66+660,5,95],'','cen');lbl('Planta cloacal',[96+660,4.5,95],'','cen');
+// línea eléctrica de media tensión y subestación
+{const g=new THREE.Group();scene.add(g);CEN.add(g);const xs=[];for(let x=1150;x>=800;x-=50)xs.push(x);const Z=69;
+ xs.forEach(x=>{seg([x,0.3,Z],[x,10,Z],0.14,0x6b5a45,g);box(2.4,0.15,0.15,0x6b5a45,[x,9.5,Z],g);[-1,0,1].forEach(d=>cyl(0.06,0.2,0xdddddd,[x+d*1.0,9.7,Z],g))});
+ for(let i=0;i<xs.length-1;i++)[-1,0,1].forEach(d=>{const N=8;for(let k=0;k<N;k++){const t0=k/N,t1=(k+1)/N,sg=t=>0.8*4*t*(1-t);seg([xs[i]+d-(50)*t0,9.8-sg(t0),Z],[xs[i]+d-50*t1,9.8-sg(t1),Z],0.02,0x333,g)}});
+ [-1,0,1].forEach(d=>seg([800+d,9.8,Z],[786,4.2,75],0.02,0x333,g));
+ hot(g,'Línea eléctrica de media tensión','Alimenta la planta central desde la red: bombas, tableros, iluminación y campamento. Tiene su faja de seguridad y nada se iza debajo.')}
+{const g=new THREE.Group();g.position.set(126,0.3,75);PC.add(g);box(3,2.2,2,0x8d949a,[0,1.4,0],g,{metalness:.5});box(1.4,1.8,0.8,0x9aa0a6,[-2.5,1.2,0],g);
+ chainFence(g,[[-4.5,-3],[3,-3],[3,3],[-4.5,3],[-4.5,-3]],'subestación');hot(g,'Subestación transformadora','Baja la media tensión de la línea para los tableros de la planta. Delimitada, con acceso solo para electricistas habilitados.')}
+lbl('Línea eléctrica',[950,12,69],'','cen');lbl('Subestación',[126+660,4.5,75],'','cen');
+// matafuegos, detectores, kits y residuos que faltaban
+[[32,-19.5,'trenes'],[-30,-34,'clarificadores'],[-70,-34,'pulmón 2'],[60,24,'agua tratada'],[-30,-80,'sumidero'],[37,68.5,'laboratorio'],[52,90,'campamento'],[120,72,'subestación'],[30,-60,'lodos']].forEach(([x,z,n])=>extinguisher(PC,x,z,n));
+gasDetector(PC,-36,18,'trenes');gasDetector(PC,-112,-10,'pulmón 2');spillKit(PC,62,-18);spillKit(PC,-30,-60);bins(PC,-30,-27.5,0);bins(PC,44,76,0);
+windsock(PC,40,-28,'trenes');eyewash(PC,30,-28);
+
+
+// operador caminando por un recorrido cerrado
+function walker(pts,speed,col=0x2b5fa8,par=scene,mode){const g=new THREE.Group();par.add(g);
+ const body=box(0.45,0.8,0.28,col,[0,1.1,0],g);const lL=box(0.16,0.75,0.18,0x1f3c70,[-0.12,0.4,0],g),lR=box(0.16,0.75,0.18,0x1f3c70,[0.12,0.4,0],g);
+ [lL,lR].forEach(l=>{l.geometry.translate(0,-0.375,0);l.position.y=0.78});
+ const aL=box(0.12,0.7,0.14,col,[-0.3,1.45,0],g),aR=box(0.12,0.7,0.14,col,[0.3,1.45,0],g);[aL,aR].forEach(a=>{a.geometry.translate(0,-0.33,0)});
+ const h=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8),M(0xd9b08c));h.position.y=1.68;g.add(h);const hel=new THREE.Mesh(new THREE.SphereGeometry(0.18,10,8,0,Math.PI*2,0,Math.PI/2),M(0xffffff));hel.position.y=1.72;g.add(hel);
+ box(0.47,0.08,0.3,0xd6f03a,[0,1.25,0],g);box(0.1,0.14,0.05,0xf2c230,[0.12,1.3,0.17],g);hot(g,'Operador en recorrida','Control de niveles, presiones, pérdidas y contenciones, con radio y EPP completo.');
+ const cv=new THREE.CatmullRomCurve3(pts.map(p=>v3(p[0],0.3,p[1])),true,'catmullrom',0.05);const L=cv.getLength();let u=Math.random();const P=v3(),T=v3();
+ MOVERS.push({mode,upd(dt,tt){u=(u+speed*dt/L)%1;cv.getPointAt(u,P);cv.getTangentAt(u,T);g.position.copy(P);g.rotation.y=Math.atan2(T.x,T.z);const s=Math.sin(tt*7)*0.5;lL.rotation.x=s;lR.rotation.x=-s;aL.rotation.x=-s*0.8;aR.rotation.x=s*0.8},g});return g}
+walker([[-20,-21.5],[1,-21.5],[1,5.5],[-20,5.5]],1.1);                 // recorrida de piletas
+walker([[-55,-5.3],[-36,-5.3],[-36,-6.3],[-55,-6.3]],0.9,0x2b5fa8);            // well testing
+walker([[13,-12.5],[13,-3.5],[13.6,-3.5],[13.6,-12.5]],0.7,0x2b5fa8);   // bombeo de transferencia
+walker([[52,28.4],[76,28.4],[76,29.4],[52,29.4]],0.8,0xeeeeee,MOV);          // laboratorio ↔ tanques
+walker([[18,-15],[76,-15],[76,-16.2],[18,-16.2]],1.0,0x2b5fa8,MOV);      // trenes de tratamiento
+walker([[-40,-22],[30,-22],[30,-23.4],[-40,-23.4]],1.0,0x2b5fa8,PC);    // planta central (coordenadas locales)
+walker([[766,-97],[778,-97],[778,-96],[766,-96]].map(p=>[p[0]-660,p[1]]),0.6,0x2b5fa8,PC);
+// vehículo que recorre un circuito cerrado con paradas (nunca queda detenido sobre el camino)
+function driver(obj,pts,speed,stops,mode){const cv=new THREE.CatmullRomCurve3(pts.map(p=>v3(p[0],0.3,p[1])),true,'catmullrom',0.3);const L=cv.getLength();let u=Math.random()*0.5,wait=0;const P=v3(),T=v3();
+ MOVERS.push({mode,upd(dt){if(wait>0){wait-=dt;return}const u0=u;u=(u+speed*dt/L)%1;for(const s of stops)if(u0<s.u&&u>=s.u){wait=s.t}cv.getPointAt(u,P);cv.getTangentAt(u,T);obj.position.copy(P);obj.rotation.y=Math.atan2(-T.z,T.x)},g:obj})}
+// camión cisterna: entra a la dársena del pad, carga el excedente y vuelve a salir por el carril opuesto
+const tkM=truck(0,0,0,scene);hot(tkM,'Camión cisterna','Retira el excedente del pico cuando el retorno supera la capacidad de la planta modular. Carga en la dársena, dentro de la locación.');
+driver(tkM,[[1150,63.5],[400,63.5],[150,63.5],[118,63],[104,54],[92,47.5],[76,44],[68,38],[80,33.5],[104,35],[120,44],[128,56],[150,60.5],[400,60.5],[1150,60.5],[1160,62]],12,[{u:0.2,t:12}],'mov');
+// camión de gasoil: abastece las estaciones de bombeo entre el pad y la planta central
+const tkG=truck(0,0,0,scene,0xf2c230);hot(tkG,'Camión de gasoil','Abastece las cisternas de las estaciones de bombeo del pad y de la planta central.');
+driver(tkG,[[150,60.5],[530,60.5],[545,64],[548,72],[540,78],[532,72],[530,63.5],[150,63.5],[138,64],[133,70],[140,77],[147,70],[150,62]],10,[{u:0.32,t:8},{u:0.82,t:8}],'cen');
+// camioneta de recorrida en el camino
+
+
+// ---------------- partículas de flujo ----------------
+function mkPath(pts){return new THREE.CatmullRomCurve3(pts.map(p=>v3(...p)),false,'catmullrom',0.01)}
+const i1=PS1.userData.inP,o1=PS1.userData.outP;
+const common=[[WELLX,2.8,-13.4],[WELLX,0.9,-13.4],[HX,0.9,-13.4],[HX,0.9,0],[-66.8,0.9,0],[-60,0.9,0],[-58.45,0.75,0],[-58,2.5,0],[-57.55,0.75,0],[-55,0.75,0],[-52.3,1.05,0],[-48.8,1.3,0],[-44.2,1.3,0],[-40.7,1.05,0],[-36.3,1.05,0],[-36.3,2.7,0],[-31,2.7,0],[-30,2.0,-0.5],[-30,0.6,-2.4],[-30,0.6,-3],[-24,0.6,-3],[-24,0.6,-10.5],[-12,3,-10.5],[-3.95,0.6,-10.5],[-1.5,0.6,-8],[i1.x,0.6,-8],[7,0.8,-8],[o1.x,0.6,-8]];
+const i2=PS2.userData.inP,o2=PS2.userData.outP;
+const PATHS={
+ mov:[{c:common.concat([[14,0.6,-8],[14,0.6,-42],[21.5,0.6,-42],[32,2.4,-42],[32,0.6,-31.5],[32,0.6,-18],[16,0.6,-18],[16,0.6,-11],[19.5,0.6,-11],[19.5,0.6,-9.25],[25.6,0.6,-9.25],[25.6,2.6,-9.25],[29,3.2,-11],[33.6,2.6,-9.25],[33.6,0.6,-9.25],[45.5,0.6,-9.25],[45.5,2.4,-9.25],[51,2.6,-11]]),col:0xd07a3a},
+      {c:[[51,2.6,-11],[57.5,2.0,-9.75],[57.5,0.6,-9.25],[62,0.6,-9.25],[62,0.6,-11],[78,0.6,-11],[78,0.6,-40],[81.8,0.6,-40],[98,2.4,-40],[114.2,0.6,-40],[118,0.6,-40],[118,0.6,-18],[i2.x,0.6,-18],[124,0.8,-18],[o2.x,0.45,-18],[132,0.45,-18],[132,0.45,52],[134,0.45,54],[300,0.45,54]],col:0x41b8ea}],
+ cen:[{c:common.concat([[16,0.45,-8],[16,0.45,38],[18,0.45,40],[148,0.45,40],[150,0.45,42],[150,0.45,48],[152,0.45,LINE_Z],[538,0.45,LINE_Z],[540,0.45,40],[553.8,0.45,40],[570,2.4,40],[586,0.6,40],[610,0.6,40],[610,0.6,14],[626,2.4,14]]),col:0xd07a3a},
+      {c:[[626,2.4,14],[686,2.4,14],[710,0.6,14],[710,0.6,0],[726,0.6,0],[740,2.4,0],[754,0.6,0],[762,0.6,0],[762,0.6,-90],[766,0.6,-90],[770,0.8,-90],[PS3.userData.outP.x,0.45,-90],[1100,0.45,-90]],col:0x41b8ea}],
+};
+const gasPath=mkPath([[-33,3.4,0],[-33,3.6,-2],[-33,0.6,-6],[-38,0.6,-12],[-38,0.6,-58],[FL[0],17,FL[1]]]);
+const PG=new THREE.SphereGeometry(0.24,8,6);
+const flows={mov:[],cen:[]};
+for(const k in PATHS){PATHS[k].forEach(sg=>{const cv=mkPath(sg.c),L=cv.getLength();const n=Math.max(12,Math.round(L/6));const mat=new THREE.MeshBasicMaterial({color:sg.col});
+ for(let i=0;i<n;i++){const m=new THREE.Mesh(PG,mat);scene.add(m);flows[k].push({m,cv,u:i/n,sp:9/L})}})}
+const gasMat=new THREE.MeshBasicMaterial({color:0xb8c0c6,transparent:true,opacity:.7});const gasP=[];for(let i=0;i<14;i++){const m=new THREE.Mesh(PG,gasMat);m.scale.setScalar(0.8);scene.add(m);gasP.push({m,u:i/14,sp:9/gasPath.getLength()})}
+
+// ---------------- recorrido ----------------
+const S_COMMON=[
+ {t:'Pozos',k:'raw',d:'Después de la fractura se abren los pozos para el flowback, a través del desander y el choke. Vuelve parte del agua inyectada, casi toda en las primeras semanas y las 24 horas del día.',c:[WELLX,2,0],e:[WELLX+30,26,48]},
+{t:'Válvula de cierre de emergencia (SDV)',k:'raw',d:'Primera barrera después del colector: válvula con actuador neumático comandada por el panel ESD. Cierra sola ante alta o baja presión, o con los pulsadores de pánico.',c:[-66.8,1.5,0],e:[-60,9,12]},
+ {t:'Desarenador',k:'raw',d:'Desarenador ciclónico: retiene la arena antes del choke para que no lo erosione. Las purgas van a la pileta de sólidos, donde la zaranda separa y pesa la arena y la descarga al contenedor; es residuo especial y sale con manifiesto. Las purgas se pueden automatizar desde la sala de control.',c:[-57,3,5],e:[-40,16,26]},
+ {t:'Choke manifold',k:'raw',d:'Estrangula el flujo para controlar presión y caudal de cada pozo. Dos ramas permiten cambiar el orificio sin cortar el flowback.',c:[-46.5,1.5,0],e:[-38,10,14]},
+ {t:'Separador trifásico',k:'raw',d:'Entra cuando el pozo empieza a dar hidrocarburo. Separa gas, petróleo y agua: el agua va a las piletas; el petróleo, a la línea de producción; el gas, a la antorcha o a la línea de gas.',c:[-31,2.5,0],e:[-18,16,24]},
+ {t:'Antorcha',k:'',d:'Con el pozo ya dando gas, el gas del separador se quema lejos de pozos y equipos, dentro de un terraplén, hasta que se conecta a la línea de gas. En pozos de gas el volumen es mayor: se quema o se manda a la línea; el venteo directo queda para la etapa inicial y emergencias.',c:[FL[0],8,FL[1]],e:[FL[0]+34,26,FL[1]+40]},
+ {t:'Producción a USP / EPF',k:'',d:'El petróleo separado no se almacena en la locación: va por la línea de producción a la planta separadora (USP o EPF), y el gas también cuando hay línea.',c:[-30,1,40],e:[-10,30,90]},
+ {t:'Piletas',k:'raw',d:'Reciben el agua separada, dentro de un recinto de contención, y hay que sacarla sin parar. La arena fina que pasa el desander decanta en el fondo: se retira con camión de vacío a un volquete y sale como residuo especial.',c:[-10,2,-8],e:[8,20,22]},
+ {t:'Bombeo de transferencia',k:'raw',d:'Dos motobombas sobre recinto de contención, A en marcha y B de backup, con derivadores, válvulas y cisterna de gasoil. Toman de las piletas y mandan al tratamiento.',c:[7,1,-8],e:[18,11,10]},
+];
+const S_MOV=[
+ {t:'Tanque pulmón en el pad',k:'raw',d:'Amortigua los pulsos del retorno para que los trenes traten a caudal parejo.',c:[32,2,-42],e:[52,30,-6]},
+ {t:'Separación primaria y oxidación',k:'raw',d:'La planta modular llega montada sobre un semirremolque. Primero separa los sólidos gruesos y la arena; después el oxidante precipita hierro y sulfuros y baja la carga bacteriana.',c:[26,2.5,-8],e:[20,14,14]},
+ {t:'Flotación por aire disuelto (DAF)',k:'raw',d:'Separa sólidos livianos, hierro, hidrocarburos y grasas que flotan con las microburbujas. Los lodos salen por cañería hacia el tanque de lodos.',c:[31,2.5,-8],e:[36,14,16]},
+ {t:'Filtración avanzada',k:'tre',d:'Un segundo semirremolque con columnas de filtración reduce la turbidez y las trazas remanentes.',c:[48,2.5,-8],e:[46,14,16]},
+ {t:'Desinfección, automatización y control',k:'tre',d:'Se dosifica biocida y el agua pasa al tanque de la planta. Un tablero automatiza la operación y permite el monitoreo remoto. No se desaliniza: el agua sigue salada.',c:[55,2.5,-8],e:[62,14,16]},
+ {t:'Lodos',k:'',d:'Los lodos del clarificador van por cañería a un tanque de lodos, pasan por el filtro prensa y la torta cae a volquetes: residuo especial con manifiesto. El líquido vuelve al tratamiento.',c:[40,2,16],e:[52,18,40]},
+ {t:'Tanques de agua tratada',k:'tre',d:'Guardan el agua tratada hasta que la pida el blender. El calendario manda: guardar mucho tiempo cuesta más de lo que se ahorra.',c:[98,2,-18],e:[136,36,30]},
+ {t:'Laboratorio',k:'tre',d:'ATP, hierro, cloruros, pH y compatibilidad con el reductor de fricción. Si no pasa, no va al blender.',c:[60,2,25],e:[68,10,40]},
+ {t:'Bombeo de despacho',k:'tre',d:'Dos motobombas sobre recinto de contención toman de los tanques de agua tratada y la mandan por layflat al próximo pad.',c:[124,1,-18],e:[136,12,0]},
+ {t:'Al blender del próximo pad',k:'tre',d:'El agua tratada se mezcla con agua dulce en el blend de la próxima fractura. Si el retorno supera la capacidad, el excedente sale en camión.',c:[170,1,40],e:[160,44,120]},
+];
+const S_CEN=[
+ {t:'Layflat al bloque',k:'raw',d:'El retorno viaja por layflat, HDPE o cañería enterrada hasta la planta central. Exige cruces de camino, permisos e ingeniería. La escena comprime la distancia.',c:[330,1,LINE_Z],e:[300,90,180]},
+ {t:'Pulmón de la planta central',k:'raw',d:'Dos tanques que reciben de varios pads y absorben el pico del retorno.',c:[570,2,5],e:[520,60,90]},
+ {t:'Trenes de tratamiento',k:'raw',d:'Oxidación, clarificación, filtración y desinfección en dos trenes en paralelo, más dos clarificadores circulares. No se desaliniza.',c:[660,2,-10],e:[640,50,80]},
+ {t:'Lodos y sumidero',k:'',d:'Los lodos van por cañería al espesador, pasan por el filtro prensa y salen en volquetes. Los rechazos van por línea al pozo sumidero.',c:[680,2,-78],e:[700,34,-20]},
+ {t:'Agua tratada',k:'tre',d:'Tres tanques que despachan a los pads del bloque según el calendario de fractura.',c:[740,2,0],e:[800,60,90]},
+ {t:'Laboratorio',k:'tre',d:'Mismo control que en el pad: ATP, hierro, cloruros, pH y compatibilidad con el reductor de fricción.',c:[690,2,72],e:[700,16,104]},
+ {t:'Bombeo de despacho',k:'tre',d:'Motobombas A y B sobre recinto de contención, con derivadores y cisterna de gasoil, toman de los tanques de agua tratada.',c:[770,1,-90],e:[784,12,-70]},
+ {t:'A los pads del bloque',k:'tre',d:'Layflat de agua tratada hacia los pads del bloque, donde se mezcla en el blender.',c:[900,1,-90],e:[880,70,40]},
+];
+let MODE='mov',STEP=-1;const steps=()=>S_COMMON.concat(MODE==='mov'?S_MOV:S_CEN);
+const OVR={mov:{c:[20,0,-5],e:[-50,150,190]},cen:{c:[470,0,-30],e:[300,560,640]}};
+function renderSteps(){const el=$('steps');el.innerHTML=steps().map((s,i)=>`<button class="${s.k}" data-i="${i}" aria-current="${i===STEP}"><i>${i+1}</i><span>${s.t}</span><small>${i<S_COMMON.length?'locación':MODE==='mov'?'en el pad':'planta central'}</small></button>`).join('');
+ el.querySelectorAll('button').forEach(b=>b.onclick=()=>{stopPlay();go(+b.dataset.i)})}
+function renderDist(){$('dist').innerHTML=MODE==='mov'?`<div>Planta modular</div><b>En la locación</b><span>Dentro del mismo pad, fuera del alcance de la antorcha y de las zonas clasificadas del well testing. Se muda con cada pad, sin traslados ni cruces de camino.</span>`:`<div>Planta central del bloque</div><b>A varios kilómetros</b><span>Cerca del centro del bloque o junto a una planta existente; los pads le envían el retorno por línea. La escena comprime la distancia.</span>`}
+let camAnim=null;function fly(c,e,d=1.8){camAnim={t:0,d,fT:controls.target.clone(),tT:v3(...c),fE:camera.position.clone(),tE:v3(...e)}}
+function go(i){const S=steps();STEP=i;const s=S[i];$('st-t').innerHTML=`${i+1} · ${s.t} <small>${i<S_COMMON.length?'en la locación':MODE==='mov'?'planta modular en el pad':'planta central del bloque'}</small>`;$('st-d').textContent=s.d;
+ fly(s.c,s.e);renderSteps()}
+function overview(){STEP=-1;const o=OVR[MODE];fly(o.c,o.e);$('st-t').textContent=MODE==='mov'?'Vista general · planta modular en el pad':'Vista general · planta central del bloque';
+ $('st-d').textContent=MODE==='mov'?'Todo ocurre en la locación: el well testing separa el agua, que pasa a un pulmón, a dos trenes de plantas modulares sobre semirremolque y a tanques de agua tratada, y sale por layflat al próximo pad. Todo receptor de flowback está sobre un recinto de contención.':'El well testing es el mismo; el agua sale por layflat hacia una planta central que atiende varios pads. Absorbe mejor el pico y diluye la inversión, pero exige líneas, cruces de camino, permisos e ingeniería.';
+renderSteps()}
+function setMode(m){MODE=m;$('m-mov').setAttribute('aria-pressed',String(m==='mov'));$('m-cen').setAttribute('aria-pressed',String(m==='cen'));MOV.visible=m==='mov';CEN.visible=m==='cen';
+ flows.mov.forEach(f=>f.m.visible=m==='mov');flows.cen.forEach(f=>f.m.visible=m==='cen');renderDist();stopPlay();overview()}
+$('m-mov').onclick=()=>setMode('mov');$('m-cen').onclick=()=>setMode('cen');$('v-all').onclick=()=>{stopPlay();overview()};
+$('next').onclick=()=>{stopPlay();go((STEP+1)%steps().length)};$('prev').onclick=()=>{stopPlay();go((STEP-1+steps().length)%steps().length)};
+let playT=null;function stopPlay(){if(playT){clearInterval(playT);playT=null;$('play').textContent='▶ Recorrido'}}
+$('play').onclick=()=>{if(playT){stopPlay();return}$('play').textContent='■ Detener';go(0);playT=setInterval(()=>{if(STEP>=steps().length-1){stopPlay();overview()}else go(STEP+1)},6500)};
+
+
+// ---------------- oportunidades para PyMEs: una página por sección, con el 3D de fondo ----------------
+{const IC={
+ obra:'<svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10"/><path d="M9 20v-6h6v6"/><path d="M2 10l10-7 10 7"/></svg>',
+ lin:'<svg viewBox="0 0 24 24"><path d="M2 8h6v8H2M22 8h-6v8h6"/><path d="M8 10h8M8 14h8"/><circle cx="12" cy="12" r="1"/></svg>',
+ tra:'<svg viewBox="0 0 24 24"><path d="M1 16V7h12v9M13 10h5l4 4v2h-9"/><circle cx="6" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/></svg>',
+ man:'<svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>',
+ ele:'<svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
+ agu:'<svg viewBox="0 0 24 24"><path d="M9 2h6M10 2v6L4 19a2 2 0 0 0 1.8 3h12.4A2 2 0 0 0 20 19L14 8V2"/><path d="M7 15h10"/></svg>',
+ res:'<svg viewBox="0 0 24 24"><path d="M7 19H4l3-5M17 19h3l-3-5M9 5l3-2 3 5"/><path d="M7 14l-3-5h6M17 14l3-5M12 3l3 5h-6"/></svg>',
+ apo:'<svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>'};
+ const P=[
+ {k:'obra',c:'#d07a3a',t:'Obra civil y montaje',l:'Antes de que llegue la primera gota de retorno, la locación necesita base, contención y estructuras.',m:'mov',v:[[98,0,-18],[52,42,40]],
+  o:['Nivelación de locaciones, dársenas y caminos internos','Recintos de contención con geomembrana y bordos','Bases y dados de hormigón para skids, líneas y tanques','Montaje de tanques australianos y piletas sobre skid','Herrería: plataformas, barandas, escaleras y soportes'],
+  s:['Operadores de equipo vial habilitados','Soldadores calificados','Riggers y planes de izaje','Termofusión de geomembranas','Trabajo en altura','Excavaciones seguras','Lectura de planos']},
+ {k:'lin',c:'#41b8ea',t:'Líneas y conducción',l:'El agua de retorno viaja por hierros de alta presión en el pad y por layflat o HDPE hasta el tratamiento.',m:'mov',v:[[-70,0,0],[-46,16,30]],
+  o:['Tendido de layflat, HDPE y cañería enterrada','Zanjeo, cruces de camino y caño camisa','Reparación de mangueras, acoples y uniones','Inspección y ensayos no destructivos de hierros de alta presión','Provisión de eslingas de seguridad y fundas antilátigo'],
+  s:['Termofusión de HDPE','Ensayos no destructivos nivel II','Armado de uniones martillo','Despresurización y energía retenida','Permisos de trabajo','Manejo de cargas']},
+ {k:'tra',c:'#f2b33d',t:'Transporte e izaje',l:'Plantas modulares, skids, piletas, gasoil y residuos se mueven todo el tiempo entre pads y plantas.',m:'mov',v:[[100,0,30],[66,26,84]],
+  o:['Traslado de plantas modulares, skids y piletas entre pads','Hidrogrúas y manipuladores telescópicos','Camiones de vacío y cisternas para el excedente del pico','Logística de gasoil a estaciones de bombeo','Transporte de residuos especiales con manifiesto'],
+  s:['Licencia profesional y cargas peligrosas','Manejo defensivo','Operador de izaje habilitado','Flota con GPS satelital','Inscripción como transportista de residuos','Estiba y trincado']},
+ {k:'man',c:'#4fd18b',t:'Mantenimiento de equipos',l:'Bombas, plantas y equipos de superficie trabajan 24 horas durante toda la campaña.',m:'mov',v:[[7,1,-8],[22,10,10]],
+  o:['Motobombas de transferencia y despacho (preventivo y correctivo)','Plantas modulares: flotación, filtros, bombas dosificadoras','Zarandas, desarenadores y válvulas','Guardias 24/7 durante la campaña','Repuestos y tornería local'],
+  s:['Mecánica diésel','Bombas centrífugas y alineación','Análisis de vibraciones','Hidráulica y neumática','Bloqueo y etiquetado (LOTO)','Diagramas rotativos']},
+ {k:'ele',c:'#c77dff',t:'Electricidad, instrumentación y datos',l:'La planta central se alimenta de la red y todo el circuito se controla con sensores, cámaras y telemetría.',m:'cen',v:[[786,4,74],[836,20,118]],
+  o:['Instalación eléctrica industrial, tableros y líneas a planta','Telemetría, sensores, cámaras y monitoreo remoto','Automatización de purgas y sistemas de cierre de emergencia','Calibración de detectores de gases e instrumentos','Software de registro y mantenimiento predictivo'],
+  s:['Electricistas matriculados','Media tensión','Áreas clasificadas (Ex)','PLC y automatización','Redes y telemetría','Programación y datos']},
+ {k:'agu',c:'#2fbf9a',t:'Agua, química y laboratorio',l:'El agua tratada solo vuelve a la fractura si pasa el control de laboratorio.',m:'mov',v:[[46,2,-6],[30,16,22]],
+  o:['Análisis de agua: bacterias, hierro, cloruros, pH, compatibilidad','Provisión y dosificación de oxidantes, coagulantes y biocidas','Operación de plantas de tratamiento por contrato','Muestreo y registros para la autoridad ambiental'],
+  s:['Técnicos químicos y de laboratorio','Microbiología del agua','Sustancias peligrosas y hojas de seguridad','Operación de plantas de tratamiento','Registros ambientales']},
+ {k:'res',c:'#ef5350',t:'Residuos y ambiente',l:'Arena, lodos y rechazos salen como residuo especial, con trazabilidad de punta a punta.',m:'mov',v:[[40,1,16],[58,18,42]],
+  o:['Gestión de arena del desarenador y de piletas','Deshidratación y disposición de lodos','Limpieza de piletas y tanques','Remediación de derrames y kits antiderrame','Monitoreo ambiental de locaciones'],
+  s:['Inscripción como operador de residuos especiales','Manifiestos y trazabilidad','Espacios confinados','Respuesta a derrames','Normativa ambiental provincial']},
+ {k:'apo',c:'#8fa2b1',t:'Apoyo en locación y seguridad',l:'Cada pad y cada planta es un pequeño pueblo que funciona día y noche.',m:'mov',v:[[20,0,60],[52,28,108]],
+  o:['Campamentos, catering, limpieza y agua potable','Plantas cloacales compactas y su mantenimiento','Torres de iluminación y generadores en alquiler','Matafuegos, señalización, EPP y capacitación','Vigilancia y control de acceso'],
+  s:['Habilitación bromatológica','Operación de plantas cloacales','Grupos electrógenos','Instructores HSE','Vigilancia habilitada','Servicio 24/7']}];
+ const o=$('opp');let I=0;const esc=t=>t.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+ function view(){const p=P[I];o.style.setProperty('--c',p.c);
+  o.querySelector('.page').outerHTML=`<div class="page" style="--c:${p.c}"><div class="hd"><div class="ic">${IC[p.k]}</div><div><div class="num">${String(I+1).padStart(2,'0')} / ${String(P.length).padStart(2,'0')}</div><h2>${esc(p.t)}</h2></div></div>
+   <p class="lead">${esc(p.l)}</p><div class="cols"><div><h3>Oportunidades</h3><ul class="op">${p.o.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div><h3>Skills y habilitaciones</h3><div class="sk">${p.s.map(x=>`<span>${esc(x)}</span>`).join('')}</div></div></div></div>`;
+  o.querySelectorAll('.dots button').forEach((b,i)=>b.setAttribute('aria-current',String(i===I)));$('o-prev').disabled=I===0;$('o-next').textContent=I===P.length-1?'Volver al inicio ↺':'Siguiente ▶';
+  if(MODE!==p.m)setMode(p.m);fly(p.v[0],p.v[1],2.2)}
+ function offset(on){const w=canvas.clientWidth,h=canvas.clientHeight;if(on&&w>860)camera.setViewOffset(w,h,-w*0.24,0,w,h);else camera.clearViewOffset()}
+ o.querySelector('.dots').innerHTML=P.map((p,i)=>`<button aria-label="${esc(p.t)}" style="--c:${p.c}"></button>`).join('');
+ o.querySelectorAll('.dots button').forEach((b,i)=>b.onclick=()=>{I=i;view()});
+ $('o-prev').onclick=()=>{if(I>0){I--;view()}};$('o-next').onclick=()=>{I=(I+1)%P.length;view()};
+ const fsOn=()=>{try{const d=document.documentElement;(d.requestFullscreen?d.requestFullscreen():d.webkitRequestFullscreen&&d.webkitRequestFullscreen())?.catch?.(()=>{})}catch(e){}};
+ const fsOff=()=>{try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}};
+ function open(){stopPlay();o.hidden=false;document.body.classList.add('opp-on');I=0;offset(true);view();fsOn()}
+ function close(){o.hidden=true;document.body.classList.remove('opp-on');offset(false);fsOff();overview()}
+ $('oppBtn').onclick=open;$('opp-x').onclick=close;$('opp-fs').onclick=()=>document.fullscreenElement?fsOff():fsOn();
+ addEventListener('keydown',e=>{if(o.hidden)return;if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();$('o-next').click()}if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();$('o-prev').click()}if(e.key==='Escape'&&!document.fullscreenElement)close()});
+ document.addEventListener('fullscreenchange',()=>{$('opp-fs').textContent=document.fullscreenElement?'⤢ Salir de pantalla completa':'⛶ Pantalla completa';setTimeout(()=>{resize();if(!o.hidden)offset(true)},120)});
+ addEventListener('resize',()=>{if(!o.hidden)offset(true)});
+ window.__opp={open,go:i=>{I=i;view()},jump:()=>{const p=P[I];__fb.cam(p.v[0],p.v[1])}};}
+
+// ---------------- tooltip ----------------
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),tip=$('tip');
+canvas.addEventListener('pointermove',e=>{if(e.buttons)return;const r=canvas.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,camera);
+ const hs=ray.intersectObjects(HOT.filter(h=>{let o=h;while(o){if(o.visible===false)return false;o=o.parent}return true}),true);const h=hs.find(x=>x.object.userData.tip);
+ if(!h){tip.hidden=true;return}tip.hidden=false;tip.innerHTML=`<b>${h.object.userData.tip[0]}</b>${h.object.userData.tip[1]}`;tip.style.left=(e.clientX-r.left)+'px';tip.style.top=(e.clientY-r.top)+'px'});
+canvas.addEventListener('pointerleave',()=>tip.hidden=true);
+let dn=null;canvas.addEventListener('pointerdown',e=>{dn=[e.clientX,e.clientY]});canvas.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'||!dn||Math.hypot(e.clientX-dn[0],e.clientY-dn[1])>8)return;const ev=new PointerEvent('pointermove',{clientX:e.clientX,clientY:e.clientY});canvas.dispatchEvent(ev)});
+
+// ---------------- bucle ----------------
+function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+const clock=new THREE.Clock();const tmp=v3(0,0,0);
+function frame(dt,tt){
+ if(camAnim){camAnim.t+=dt/camAnim.d;const k=Math.min(1,camAnim.t),e=k*k*(3-2*k);controls.target.lerpVectors(camAnim.fT,camAnim.tT,e);camera.position.lerpVectors(camAnim.fE,camAnim.tE,e);if(k>=1)camAnim=null}
+ controls.update();
+ flows[MODE].forEach(f=>{f.u=(f.u+f.sp*dt)%1;f.cv.getPointAt(f.u,tmp);f.m.position.copy(tmp)});
+ gasP.forEach(f=>{f.u=(f.u+f.sp*dt)%1;gasPath.getPointAt(f.u,tmp);f.m.position.copy(tmp)});
+ const fl=scene.userData.flame;fl.scale.set(1+0.15*Math.sin(tt*13),1+0.25*Math.sin(tt*9+1),1+0.15*Math.cos(tt*11));
+ SOCKS.forEach((k,i)=>{k.rotation.y=Math.sin(tt*1.7+i)*0.12;k.rotation.z=-0.12+Math.sin(tt*2.3+i)*0.06});BEAC.forEach((b,i)=>b.visible=(Math.floor(tt*1.2+i*0.3)%2)===0);
+ MOVERS.forEach(m=>{const vis=!m.mode||m.mode===MODE;m.g.visible=vis;if(vis)m.upd(dt,tt)});
+ PIL.forEach((p,i)=>{p.userData.w.position.y=0.5+2.6*(0.55+0.15*Math.sin(tt*0.4+i))});
+ {const T=controls.target,d=camera.position.distanceTo(T),half=Math.max(60,Math.min(420,d*0.9));sun.target.position.copy(T);sun.position.copy(T).add(v3(-160,240,120));const sc=sun.shadow.camera;if(Math.abs(sc.right-half)>2){sc.left=-half;sc.right=half;sc.top=half;sc.bottom=-half;sc.updateProjectionMatrix()}}
+ renderer.render(scene,camera);
+ const W=canvas.clientWidth,H=canvas.clientHeight;
+ LBL.forEach(l=>{if(l.mode&&l.mode!==MODE){l.e.style.display='none';return}tmp.copy(l.p).project(camera);if(tmp.z>1||Math.abs(tmp.x)>1.05||Math.abs(tmp.y)>1.05){l.e.style.display='none';return}l.e.style.display='';l.e.style.left=((tmp.x+1)/2*W)+'px';l.e.style.top=((1-tmp.y)/2*H)+'px'});
+}
+function loop(){frame(Math.min(0.05,clock.getDelta()),clock.elapsedTime);requestAnimationFrame(loop)}
+setMode('mov');const o=OVR.mov;camera.position.set(...o.e);controls.target.set(...o.c);camAnim=null;loop();
+window.__fb={setMode,go,overview,cam:(c,e)=>{camAnim=null;controls.target.set(...c);camera.position.set(...e);controls.update()},frame,steps};
+})();
+</script>
+</body>
+</html>
